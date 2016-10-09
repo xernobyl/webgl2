@@ -1,0 +1,147 @@
+<script>
+const FRAGMENT_SHADER = 0x8b30
+const VERTEX_SHADER = 0x8b31 
+
+let shaderSource = {
+	// vertex shaders
+	'vertex': {
+		'test':
+			'#version 300 es\n' +
+			'void main()\n' +
+			'{\n' +
+				'gl_Position = vec4(0.0);\n' +
+			'}\n',
+	},
+	// fragment shaders
+	'fragment': {
+		'test':
+			'#version 300 es\n' +
+			'out lowp vec4 frag_color;\n' +
+			'void main()\n' +
+			'{\n' +
+				'frag_color = vec4(0.5);\n' +
+			'}\n',
+	}
+}
+
+let shaderPrograms = {
+	'test': { 'fragment': ['test'], 'vertex': ['test'] },
+}
+
+let canvas = null
+let gl = null
+let frame = 0
+let last_time = 0.0
+
+function compileShader(shaderSource, shaderType) {
+	if (shaderType == 'vertex')
+		shaderType = gl.VERTEX_SHADER
+	else if (shaderType == 'fragment')
+		shaderType = gl.FRAGMENT_SHADER
+	
+	let shader = gl.createShader(shaderType)
+	gl.shaderSource(shader, shaderSource)
+	gl.compileShader(shader)
+
+	if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    console.log(gl.getShaderInfoLog(shader))
+		gl.deleteShader(shader)
+		return null
+  }
+
+	return shader
+}
+
+function linkProgram(shaders) {
+	let program = gl.createProgram()
+	for (let shader in shaders) {
+		gl.attachShader(program, shaders[shader])
+	}
+	gl.linkProgram(program)
+
+	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.log(gl.getProgramInfoLog(program))
+			gl.deleteProgram(program)
+			return null
+  }
+
+	return program
+}
+
+function load() {
+	let compiledShader = {}
+
+	for (let shaderType in shaderSource) {
+		compiledShader[shaderType] = {}
+		for (let shader in shaderSource[shaderType]) {
+			compiledShader[shaderType][shader] = compileShader(shaderSource[shaderType][shader], shaderType)
+			if (!compiledShader[shaderType][shader]) {
+				return false
+			}
+		}
+	}
+	
+	for (let program in shaderPrograms) {
+		let shaders = []
+		for (let shaderType in shaderPrograms[program]) {
+			for (let shader in shaderPrograms[program][shaderType]) {
+				shaders.push(compiledShader[shaderType][shaderPrograms[program][shaderType][shader]])
+			}
+		}
+		shaderPrograms[program].program = linkProgram(shaders)
+		if (!shaderPrograms[program].program) {
+			return false
+		}
+	}
+
+	return true
+}
+
+function renderLoop(frame_time) {
+	let dt = frame_time - last_time
+	last_time = frame_time
+
+	gl.clearColor(0.0, 0.0, 0.0, 0.0)
+	gl.clear(gl.COLOR_BUFFER_BIT)
+
+	++frame
+
+	window.requestAnimationFrame(renderLoop)
+}
+
+function resize() {
+	canvas.width = window.innerWidth
+	canvas.height = window.innerHeight
+}
+
+window.addEventListener('load', () => {
+	canvas = document.createElement('canvas')
+	canvas.style.width = '100%'
+	canvas.style.height = '100%'
+	canvas.style.top = '0'
+	canvas.style.left = '0'
+	canvas.style.position = 'fixed'
+	//canvas.style.padding = '0'
+	//canvas.style.zIndex = '-1'
+
+	resize()
+	window.addEventListener('resize', resize)
+
+	gl = canvas.getContext('webgl2', {alpha: false, depth: false, stencil: false, antialias: false})
+	if (gl == null) {
+		alert('WebGL 2.0 not supported apparently.\n' +
+			'Check if it is enabled if you think this should work.')
+		return
+	}
+
+	document.body.appendChild(canvas)
+
+	if (!load()) {
+		alert('Loading failed.\n' +
+			'This shouldn\'t happen. It\'s probably a bug.')
+		return
+	}
+
+	renderLoop(0.0)
+})
+</script>
