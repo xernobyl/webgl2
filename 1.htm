@@ -31,7 +31,39 @@ let shaderPrograms = {
 let canvas = null
 let gl = null
 let frame = 0
-let last_time = 0.0
+let time = 0.0
+
+
+
+
+class Vec2 {
+
+}
+
+class Vec3 {
+
+}
+
+class Vec4 {
+
+}
+
+class Particles {
+	constructor() {
+		//this.buffer = Float64Array(8 * maxParticles)
+		//this.buffer = Float32Array(8 * maxParticles)
+
+		this.buffers = []
+		this.buffers.push(gl.createBuffer())
+		this.buffers.push(gl.createBuffer())
+
+		gl.bindBuffer(buffers[0], gl.ARRAY_BUFFER)
+		gl.bufferData(gl.ARRAY_BUFFER, maxParticles * 4 * 8, gl.DYNAMIC_DRAW)
+
+		gl.bindBuffer(buffers[1], gl.ARRAY_BUFFER)
+		gl.bufferData(gl.ARRAY_BUFFER, maxParticles * 4 * 8, gl.DYNAMIC_DRAW)
+	}
+}
 
 function compileShader(shaderSource, shaderType) {
 	if (shaderType == 'vertex')
@@ -97,11 +129,14 @@ function load() {
 	return true
 }
 
-function renderLoop(frame_time) {
-	let dt = frame_time - last_time
-	last_time = frame_time
+function renderLoop(frameTime) {
+	let dt = (frameTime - time) * 0.001
+	time = frameTime * 0.001
 
-	gl.clearColor(0.0, 0.0, 0.0, 0.0)
+	gl.clearColor(0.4862387 + 0.2134697 * Math.cos(6.28318 * (0.8923576 * time + 0.9563)),
+		0.3689274 + 0.3573 * Math.cos(6.28318 * (0.367283476 * time + 0.2346)),
+		0.123478 + 0.365834457 * Math.cos(6.28318 * (0.68347 * time + 0.892537546)),
+		0.0)
 	gl.clear(gl.COLOR_BUFFER_BIT)
 
 	++frame
