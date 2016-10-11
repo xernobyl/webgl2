@@ -2,8 +2,12 @@
 <script type='text/javascript' src='vec3.js'></script>
 <script type='text/javascript' src='vec4.js'></script>
 <script>
-const FRAGMENT_SHADER = 0x8b30
-const VERTEX_SHADER = 0x8b31
+
+const fullScreenTriangle = [
+	0, 127,
+	-127, -2,
+	127, 2
+]
 
 let shaderSource = {
 	// vertex shaders
@@ -27,21 +31,20 @@ let shaderSource = {
 	}
 }
 
-class StaticGeometry {
-	constructor() {
+const staticGeometry = {
+	add: function(id, data) {
+		if (!this.vbo) {
+			this.indexData = {}
+			this.vbo = gl.genBuffer()
+		}
 
-	}
+		this.indexData[id] = {
 
-	add(id, data) {
+		}
+	},
 
-	}
-
-	remove(id) {
-
-	}
-
-	get(id) {
-
+	get: function(id) {
+		return this.indexData[id]
 	}
 }
 
@@ -114,6 +117,9 @@ function load() {
 			return false
 		}
 	}
+
+	staticGeometry.add('fullScreenTriangle', new Int8Array(fullScreenTriangle))
+	delete fullScreenTriangle
 
 	return true
 }
