@@ -1,6 +1,9 @@
+<script type='text/javascript' src='vec2.js'></script>
+<script type='text/javascript' src='vec3.js'></script>
+<script type='text/javascript' src='vec4.js'></script>
 <script>
 const FRAGMENT_SHADER = 0x8b30
-const VERTEX_SHADER = 0x8b31 
+const VERTEX_SHADER = 0x8b31
 
 let shaderSource = {
 	// vertex shaders
@@ -24,6 +27,24 @@ let shaderSource = {
 	}
 }
 
+class StaticGeometry {
+	constructor() {
+
+	}
+
+	add(id, data) {
+
+	}
+
+	remove(id) {
+
+	}
+
+	get(id) {
+
+	}
+}
+
 let shaderPrograms = {
 	'test': { 'fragment': ['test'], 'vertex': ['test'] },
 }
@@ -31,14 +52,14 @@ let shaderPrograms = {
 let canvas = null
 let gl = null
 let frame = 0
-let last_time = 0.0
+let time = 0.0
 
 function compileShader(shaderSource, shaderType) {
 	if (shaderType == 'vertex')
 		shaderType = gl.VERTEX_SHADER
 	else if (shaderType == 'fragment')
 		shaderType = gl.FRAGMENT_SHADER
-	
+
 	let shader = gl.createShader(shaderType)
 	gl.shaderSource(shader, shaderSource)
 	gl.compileShader(shader)
@@ -80,7 +101,7 @@ function load() {
 			}
 		}
 	}
-	
+
 	for (let program in shaderPrograms) {
 		let shaders = []
 		for (let shaderType in shaderPrograms[program]) {
@@ -98,14 +119,13 @@ function load() {
 }
 
 function renderLoop(frame_time) {
-	let dt = frame_time - last_time
-	last_time = frame_time
+	let dt = (frame_time - time) * 0.001
+	time = frame_time * 0.001
 
-	gl.clearColor(0.0, 0.0, 0.0, 0.0)
+	gl.clearColor(Math.sin(time + Math.PI * 2.0 / 3.0) * 0.5 + 0.5, Math.sin(time + Math.PI * 1.0 / 3.0) * 0.5 + 0.5, Math.sin(time) * 0.5 + 0.5, 0.0)
 	gl.clear(gl.COLOR_BUFFER_BIT)
 
 	++frame
-
 	window.requestAnimationFrame(renderLoop)
 }
 
