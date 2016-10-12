@@ -35,7 +35,7 @@ const staticGeometry = {
 	add: function(id, data) {
 		if (!this.vbo) {
 			this.indexData = {}
-			this.vbo = gl.genBuffer()
+			this.vbo = gl.createBuffer()
 		}
 
 		this.indexData[id] = {
