@@ -45,9 +45,9 @@ let shaderSource = {
 			'layout(location = 0) out lowp vec4 frag_color;\n' +
 			'void main()\n' +
 			'{\n' +
-				'if (length(gl_PointCoord * 2.0 - 1.0) > 1.0)\n' +
-					'discard; \n' +
-				'frag_color = vec4(0.0);\n' +
+				'//if (length(gl_PointCoord * 2.0 - 1.0) > 1.0)\n' +
+					'//discard; \n' +
+				'frag_color = vec4(min(1.0, 2.0 - length(gl_PointCoord * 4.0 - 2.0)));\n' +
 			'}\n',
 	}
 }
@@ -263,8 +263,11 @@ function renderLoop(frameTime) {
 	gl.uniform2f(shaderPrograms['test'].uniforms['screen_size'], canvas.width, canvas.height)
 	quad.draw()
 
+	gl.enable(gl.BLEND)
+	gl.blendFunc(gl.ONE, gl.ONE)
 	gl.useProgram(shaderPrograms['particles0'].program)
 	particles.draw()
+	gl.disable(gl.BLEND)
 
 	//
 
