@@ -20,17 +20,25 @@ let shaderSource = {
 			'#version 300 es\n' +
 			'layout(location = 0) in highp vec3 position;\n' +
 			'layout(location = 1) in highp vec3 velocity;\n' +
+			'out highp float point_size;\n' +
+			'flat out int id;\n' +
 			'uniform highp mat4 mvp;\n' +
+			//'in highp int gl_VertexID;\n' +
 			'void main()\n' +
 			'{\n' +
 				'gl_Position = vec4(position, 1.0);\n' +
-				'gl_PointSize = 4.0;\n' +
+				'point_size = 32.0 / (position.z * 0.5 + 0.5 + 1.0);\n' +
+				'gl_PointSize = point_size;\n' +
+				'id = int(position.x * position.y * position.z * 12345934.0);//gl_VertexID\n' +
+				//'id = gl_VertexID;\n' +
 			'}\n',
 	},
 	// fragment shaders
 	'fragment': {
 		'test':
 			'#version 300 es\n' +
+			'precision highp int;\n' +
+			'precision highp float;\n' +
 			'layout(location = 0) out lowp vec4 frag_color;\n' +
 			'uniform highp vec2 screen_size;\n' +
 			'uniform highp vec2 inverse_screen_size;\n' +
@@ -42,12 +50,21 @@ let shaderSource = {
 
 		'particleFlat':
 			'#version 300 es\n' +
+			'precision highp int;\n' +
+			'precision highp float;\n' +
 			'layout(location = 0) out lowp vec4 frag_color;\n' +
+			'in highp float point_size;\n' +
+			'flat in int id;\n' +
+
+			'vec3 palette(in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d){return a + b * cos(6.283185307179586 * (c * t + d));}\n' +
+
 			'void main()\n' +
 			'{\n' +
 				'//if (length(gl_PointCoord * 2.0 - 1.0) > 1.0)\n' +
 					'//discard; \n' +
-				'frag_color = vec4(min(1.0, 2.0 - length(gl_PointCoord * 4.0 - 2.0)));\n' +
+				'highp float alpha = clamp(min(1.0, point_size * 0.5 - length(gl_PointCoord * point_size - point_size * 0.5)), 0.0, 1.0);\n' +
+				'vec3 col = palette(fract(float(id) / 232.234643), vec3(.03453212, .2359, .34966), vec3(.745674567,.223452345,.75564), vec3(.123412345,.7385,.12354346), vec3(.23456234,.3456234,.1346));\n' +
+				'frag_color = vec4(col * alpha, alpha);\n' +
 			'}\n',
 	}
 }
@@ -115,10 +132,11 @@ class Particles {
 	constructor(nParticles) {
 		this.nParticles = nParticles
 		let goldenAngle = 2.3999632297286533222315555066336	// precision! xD
+		let altAngle = Math.PI * 2.0 - goldenAngle
 		let buffer = new Float32Array(nParticles * 6)	// position + velocity
 
 		for (let i = 1; i <= nParticles; ++i) {
-			let theta = (Math.sqrt(goldenAngle) * i) % Math.PI
+			let theta = (goldenAngle * i) % Math.PI
 			let phi = goldenAngle * i
 			let r = Math.pow(i / nParticles, 1.0 / 3.0) 
 
@@ -264,7 +282,7 @@ function renderLoop(frameTime) {
 	quad.draw()
 
 	gl.enable(gl.BLEND)
-	gl.blendFunc(gl.ONE, gl.ONE)
+	gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
 	gl.useProgram(shaderPrograms['particles0'].program)
 	particles.draw()
 	gl.disable(gl.BLEND)
