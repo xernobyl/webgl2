@@ -27,15 +27,24 @@ let shaderSource = {
 			'layout(location = 0) out lowp vec4 frag_color;\n' +
 			'uniform highp vec2 screen_size;\n' +
 			'uniform highp vec2 inverse_screen_size;\n' +
+			'uniform highp float time;\n' +
 			'void main()\n' +
 			'{\n' +
-				'frag_color = vec4(gl_FragCoord.xy * inverse_screen_size, 0.0, 0.0);\n' +
+				'frag_color = vec4(gl_FragCoord.xy * inverse_screen_size, cos(time) * 0.5 + 0.5, 0.0);\n' +
 			'}\n',
 	}
 }
 
 let shaderPrograms = {
-	'test': { 'fragment': ['test'], 'vertex': ['test'], 'uniforms': {'screen_size': -1, 'inverse_screen_size': -1} },
+	'test': {
+		'fragment': ['test'],
+		'vertex': ['test'],
+		'uniforms': {
+			'screen_size': null,
+			'inverse_screen_size': null,
+			'time': null,
+		}
+	},
 }
 
 const staticGeometry = {
@@ -188,16 +197,8 @@ function renderLoop(frameTime) {
 
 	gl.viewport(0, 0, canvas.width, canvas.height)
 
-	gl.clearColor(0.4862387 + 0.2134697 * Math.cos(6.28318 * (0.8923576 * time + 0.9563)),
-		0.3689274 + 0.3573 * Math.cos(6.28318 * (0.367283476 * time + 0.2346)),
-		0.123478 + 0.365834457 * Math.cos(6.28318 * (0.68347 * time + 0.892537546)),
-		0.0)
-
-	gl.clear(gl.COLOR_BUFFER_BIT)
-
-	//gl.drawBuffers([gl.BACK])
-
 	gl.useProgram(shaderPrograms['test'].program)
+	gl.uniform1f(shaderPrograms['test'].uniforms['time'], time)
 	gl.uniform2f(shaderPrograms['test'].uniforms['inverse_screen_size'], 1.0 / canvas.width, 1.0 / canvas.height)
 	gl.uniform2f(shaderPrograms['test'].uniforms['screen_size'], canvas.width, canvas.height)
 	quad.render()
