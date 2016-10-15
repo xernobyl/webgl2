@@ -1,3 +1,5 @@
+'use strict'
+
 class Vec4
 {
 	constructor(x, y, z, w) {

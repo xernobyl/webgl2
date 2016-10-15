@@ -1,3 +1,5 @@
+'use strict'
+
 class Mat4 {
 	constructor() {
 		this.mat = new Float64Buffer(4 * 4)

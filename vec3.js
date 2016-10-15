@@ -1,3 +1,5 @@
+'use strict'
+
 class Vec3
 {
 	constructor(x, y, z) {
