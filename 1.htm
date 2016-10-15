@@ -6,7 +6,7 @@
 const fullScreenTriangle = [
 	0, 127,
 	-127, -2,
-	127, 2
+	127, -2
 ]
 
 let shaderSource = {
@@ -14,19 +14,20 @@ let shaderSource = {
 	'vertex': {
 		'test':
 			'#version 300 es\n' +
+			'layout(location = 0) in vec2 a0;\n' +
 			'void main()\n' +
 			'{\n' +
-				'gl_Position = vec4(0.0);\n' +
+				'gl_Position = vec4(a0, 0.0, 1.0);\n' +
 			'}\n',
 	},
 	// fragment shaders
 	'fragment': {
 		'test':
 			'#version 300 es\n' +
-			'out lowp vec4 frag_color;\n' +
+			'layout(location = 0) out lowp vec4 o0;\n' +
 			'void main()\n' +
 			'{\n' +
-				'frag_color = vec4(0.5);\n' +
+				'o0 = vec4(0.5);\n' +
 			'}\n',
 	}
 }
@@ -52,10 +53,16 @@ const staticGeometry = {
 		}
 
 		this.lastOffet += data.byteLength
+
+		return this.indexData[id]
 	},
 
 	get: function(id) {
 		return this.indexData[id]
+	},
+
+	bind: function() {
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo)
 	}
 }
 
@@ -85,17 +92,21 @@ class Particles {
 	}
 }
 
-function renderQuad() {
-	gl.bindBuffer(staticGeometry.vbo)
-	let data = staticGeometry.get('fullScreenTriangle')
-	data.first = 0
-	data.count = 3
+let quad = {
+	init: function() {
+		let data = staticGeometry.add('fullScreenTriangle', new Int8Array(fullScreenTriangle))
+		delete fullScreenTriangle
 
-	gl.vertexAttribPointer(0, 2, gl.BYTE, false, 0, data.offset)
-	gl.enableVertexAttribArray(0)	
+		this.vao = gl.createVertexArray()
+		gl.bindVertexArray(this.vao)
+		gl.vertexAttribPointer(0, 2, gl.BYTE, false, 0, data.offset)
+		gl.enableVertexAttribArray(0)
+	},
 
-	gl.drawArrays(gl.TRIANGLES, data.first, data.count)
-	gl.disableVertexAttribArray(0)
+	render: function() {
+		gl.bindVertexArray(this.vao)
+		gl.drawArrays(gl.TRIANGLES, 0, 3)
+	}
 }
 
 function compileShader(shaderSource, shaderType) {
@@ -117,11 +128,23 @@ function compileShader(shaderSource, shaderType) {
 	return shader
 }
 
-function linkProgram(shaders) {
+function linkProgram(shaders, attribs) {
 	let program = gl.createProgram()
 	for (let shader in shaders) {
 		gl.attachShader(program, shaders[shader])
 	}
+
+	/*if (attribs == undefined)
+		attribs = [
+			{index: 0, name: 'a0'},
+			{index: 1, name: 'a1'},
+			{index: 2, name: 'a2'},
+			{index: 3, name: 'a3'}
+		]
+	
+	for (let i in attribs) 
+		gl.bindAttribLocation(program, attribs[i].name, attribs[i].index)*/
+
 	gl.linkProgram(program)
 
 	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
@@ -159,8 +182,7 @@ function load() {
 		}
 	}
 
-	staticGeometry.add('fullScreenTriangle', new Int8Array(fullScreenTriangle))
-	delete fullScreenTriangle
+	quad.init()
 
 	return true
 }
@@ -169,12 +191,19 @@ function renderLoop(frameTime) {
 	let dt = (frameTime - time) * 0.001
 	time = frameTime * 0.001
 
+	gl.viewport(0, 0, canvas.width, canvas.height)
+
 	gl.clearColor(0.4862387 + 0.2134697 * Math.cos(6.28318 * (0.8923576 * time + 0.9563)),
 		0.3689274 + 0.3573 * Math.cos(6.28318 * (0.367283476 * time + 0.2346)),
 		0.123478 + 0.365834457 * Math.cos(6.28318 * (0.68347 * time + 0.892537546)),
 		0.0)
 
 	gl.clear(gl.COLOR_BUFFER_BIT)
+
+	//gl.drawBuffers([gl.BACK])
+
+	gl.useProgram(shaderPrograms['test'].program)
+	quad.render()
 
 	++frame
 	window.requestAnimationFrame(renderLoop)
@@ -195,15 +224,15 @@ window.addEventListener('load', () => {
 	//canvas.style.padding = '0'
 	//canvas.style.zIndex = '-1'
 
-	resize()
-	window.addEventListener('resize', resize)
-
 	gl = canvas.getContext('webgl2', {alpha: false, depth: false, stencil: false, antialias: false})
 	if (gl == null) {
 		alert('WebGL 2.0 not supported apparently.\n' +
 			'Check if it is enabled if you think this should work.')
 		return
 	}
+
+	resize()
+	window.addEventListener('resize', resize)
 
 	document.body.appendChild(canvas)
 
