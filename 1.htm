@@ -24,12 +24,18 @@ let shaderSource = {
 	'fragment': {
 		'test':
 			'#version 300 es\n' +
-			'layout(location = 0) out lowp vec4 o0;\n' +
+			'layout(location = 0) out lowp vec4 frag_color;\n' +
+			'uniform highp vec2 screen_size;\n' +
+			'uniform highp vec2 inverse_screen_size;\n' +
 			'void main()\n' +
 			'{\n' +
-				'o0 = vec4(0.5);\n' +
+				'frag_color = vec4(gl_FragCoord.xy * inverse_screen_size, 0.0, 0.0);\n' +
 			'}\n',
 	}
+}
+
+let shaderPrograms = {
+	'test': { 'fragment': ['test'], 'vertex': ['test'], 'uniforms': {'screen_size': -1, 'inverse_screen_size': -1} },
 }
 
 const staticGeometry = {
@@ -64,10 +70,6 @@ const staticGeometry = {
 	bind: function() {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo)
 	}
-}
-
-let shaderPrograms = {
-	'test': { 'fragment': ['test'], 'vertex': ['test'] },
 }
 
 let canvas = null
@@ -134,17 +136,6 @@ function linkProgram(shaders, attribs) {
 		gl.attachShader(program, shaders[shader])
 	}
 
-	/*if (attribs == undefined)
-		attribs = [
-			{index: 0, name: 'a0'},
-			{index: 1, name: 'a1'},
-			{index: 2, name: 'a2'},
-			{index: 3, name: 'a3'}
-		]
-	
-	for (let i in attribs) 
-		gl.bindAttribLocation(program, attribs[i].name, attribs[i].index)*/
-
 	gl.linkProgram(program)
 
 	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
@@ -171,7 +162,7 @@ function load() {
 
 	for (let program in shaderPrograms) {
 		let shaders = []
-		for (let shaderType in shaderPrograms[program]) {
+		for (let shaderType in shaderSource) {
 			for (let shader in shaderPrograms[program][shaderType]) {
 				shaders.push(compiledShader[shaderType][shaderPrograms[program][shaderType][shader]])
 			}
@@ -179,6 +170,10 @@ function load() {
 		shaderPrograms[program].program = linkProgram(shaders)
 		if (!shaderPrograms[program].program) {
 			return false
+		}
+
+		for (let uniform in shaderPrograms[program].uniforms) {
+			shaderPrograms[program].uniforms[uniform] = gl.getUniformLocation(shaderPrograms[program].program, uniform)
 		}
 	}
 
@@ -203,6 +198,8 @@ function renderLoop(frameTime) {
 	//gl.drawBuffers([gl.BACK])
 
 	gl.useProgram(shaderPrograms['test'].program)
+	gl.uniform2f(shaderPrograms['test'].uniforms['inverse_screen_size'], 1.0 / canvas.width, 1.0 / canvas.height)
+	gl.uniform2f(shaderPrograms['test'].uniforms['screen_size'], canvas.width, canvas.height)
 	quad.render()
 
 	++frame
