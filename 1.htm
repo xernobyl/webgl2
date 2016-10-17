@@ -6,7 +6,6 @@
 <script type='text/javascript' src='vec3.js'></script>
 <script type='text/javascript' src='vec4.js'></script>
 <script type='text/javascript' src='mat4.js'></script>
-<script type='text/javascript' src='gl-matrix-min.js'></script>
 <script>
 'use strict'
 
@@ -189,21 +188,9 @@ function renderLoop(frameTime) {
 	let far = 100.0
 	let fov = Math.PI / 4.0
 
-	/*let projection = Mat4.projection(fov, aspect, near, far)
+	let projection = Mat4.projection(fov, aspect, near, far)
 	let view = Mat4.lookAt(new Vec3(Math.cos(time * 0.1) * 2.5, 0.0, Math.sin(time * 0.1) * 2.5), new Vec3(0.0, 0.0, 0.0), new Vec3(0.0, 1.0, 0.0))
-	let mvp = Mat4.mul(view, projection)*/
-
-	let projection = mat4.create()
-	mat4.perspective(projection, fov, aspect, near, far)
-
-	let view = mat4.create()
-	mat4.lookAt(view,
-		[Math.cos(time * 0.1) * 2.5, 0.0, Math.sin(time * 0.1) * 2.5],
-		[0.0, 0.0, 0.0],
-		[0.0, 1.0, 0.0])
-
-	let mvp = mat4.create()
-	mat4.multiply(mvp, projection, view)
+	let mvp = Mat4.mul(projection, view)
 
 	framebuffer.bind()
 
@@ -211,7 +198,6 @@ function renderLoop(frameTime) {
 	gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
 	gl.useProgram(shaderPrograms['particles0'].program)
 	gl.uniformMatrix4fv(shaderPrograms['particles0'].uniforms['mvp'], false, mvp)
-	//gl.uniformMatrix4fv(shaderPrograms['particles0'].uniforms['mvp'], false, mvp.mat)
 	particles.draw()
 	gl.disable(gl.BLEND)
 
@@ -220,13 +206,6 @@ function renderLoop(frameTime) {
 	gl.bindFramebuffer(gl.FRAMEBUFFER, null)
 	gl.drawBuffers([gl.BACK])
 	gl.viewport(0.0, 0.0, canvas.width, canvas.height)
-
-	/*gl.enable(gl.BLEND)
-	gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-	gl.useProgram(shaderPrograms['particles0'].program)
-	gl.uniformMatrix4fv(shaderPrograms['particles0'].uniforms['mvp'], false, mvp)
-	//gl.uniformMatrix4fv(shaderPrograms['particles0'].uniforms['mvp'], false, mvp.mat)
-	particles.draw()*/
 
 	gl.activeTexture(gl.TEXTURE0)
 	gl.bindTexture(gl.TEXTURE_2D, framebuffer.textureHdr)

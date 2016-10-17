@@ -1,27 +1,26 @@
 'use strict'
 
-class Vec2
-{
+class Vec2 extends Float32Array {
 	constructor(x, y) {
-		this.vec = new Float64Array(2)
+		super(2)
 		this.x = x
 		this.y = y
 	}
 
 	get x() {
-		return this.vec[0]
+		return this[0]
 	}
 
 	get y() {
-		return this.vec[1]
+		return this[1]
 	}
 
 	set x(x) {
-		this.vec[0] = x
+		this[0] = x
 	}
 
 	set y(y) {
-		this.vec[1] = y
+		this[1] = y
 	}
 
 	get xx() {

@@ -1,9 +1,8 @@
 'use strict'
 
-class Vec4
-{
+class Vec4 extends Float32Array {
 	constructor(x, y, z, w) {
-		this.vec = new Float64Array(3)
+		super(3)
 		this.x = x
 		this.y = y
 		this.z = z
@@ -11,35 +10,35 @@ class Vec4
 	}
 
 	get x() {
-		return this.vec[0]
+		return this[0]
 	}
 
 	get y() {
-		return this.vec[1]
+		return this[1]
 	}
 
 	get z() {
-		return this.vec[2]
+		return this[2]
 	}
 
 	get w() {
-		return this.vec[3]
+		return this[3]
 	}
 
 	set x(x) {
-		this.vec[0] = x
+		this[0] = x
 	}
 
 	set y(y) {
-		this.vec[1] = y
+		this[1] = y
 	}
 
 	set z(z) {
-		this.vec[2] = z
+		this[2] = z
 	}
 
 	set w(w) {
-		this.vec[3] = w
+		this[3] = w
 	}
 
 	get xx() {

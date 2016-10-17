@@ -1,35 +1,52 @@
 'use strict'
 
-class Mat4 {
+class Mat4 extends Float32Array{
 	constructor(
-		m00 = 1.0, m10 = 0.0, m20 = 0.0, m30 = 0.0,
-		m01 = 0.0, m11 = 1.0, m21 = 0.0, m31 = 0.0,
-		m02 = 0.0, m12 = 0.0, m22 = 1.0, m32 = 0.0,
-		m03 = 0.0, m13 = 0.0, m23 = 0.0, m33 = 1.0) {
-		this.mat = new Float32Array(4 * 4)
-		this.mat[0] = m00
-		this.mat[1] = m10
-		this.mat[2] = m20
-		this.mat[3] = m30
+		c0l0 = 1.0, c0l1 = 0.0, c0l2 = 0.0, c0l3 = 0.0,
+		c1l0 = 0.0, c1l1 = 1.0, c1l2 = 0.0, c1l3 = 0.0,
+		c2l0 = 0.0, c2l1 = 0.0, c2l2 = 1.0, c2l3 = 0.0,
+		c3l0 = 0.0, c3l1 = 0.0, c3l2 = 0.0, c3l3 = 1.0) {
+		super(16)
+		this[0] = c0l0
+		this[1] = c0l1
+		this[2] = c0l2
+		this[3] = c0l3
 
-		this.mat[4] = m01
-		this.mat[5] = m11
-		this.mat[6] = m21
-		this.mat[7] = m31
+		this[4] = c1l0
+		this[5] = c1l1
+		this[6] = c1l2
+		this[7] = c1l3
 
-		this.mat[8] = m02
-		this.mat[9] = m12
-		this.mat[10] = m22
-		this.mat[11] = m32
+		this[8] = c2l0
+		this[9] = c2l1
+		this[10] = c2l2
+		this[11] = c2l3
 
-		this.mat[12] = m03
-		this.mat[13] = m13
-		this.mat[14] = m23
-		this.mat[15] = m33
+		this[12] = c3l0
+		this[13] = c3l1
+		this[14] = c3l2
+		this[15] = c3l3
+	}
+
+	print() {
+		console.log(this[0], this[4], this[8], this[12])
+		console.log(this[1], this[5], this[9], this[13])
+		console.log(this[2], this[6], this[10], this[14])
+		console.log(this[3], this[7], this[11], this[15])
+	}
+
+	printTransposed() {
+		console.log(this[0], this[1], this[2], this[3])
+		console.log(this[4], this[5], this[6], this[7])
+		console.log(this[8], this[9], this[10], this[11])
+		console.log(this[12], this[13], this[14], this[15])
 	}
 
 	static projection(fov, aspect, near, far) {
 		let f = 1.0 / Math.tan(fov / 2.0)
+		console.log(f)
+		console.log(aspect)
+		console.log(f / aspect)
 		let nf = 1.0 / (near - far)
 
 		return new Mat4(
