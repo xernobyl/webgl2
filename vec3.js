@@ -501,27 +501,44 @@ class Vec3
 		return Vec4(this.z, this.z, this.z, this.z)
 	}
 
+	normalize() {
+		let l = 1.0 / this.length()
+		return new Vec3(this.x * l, this.y * l, this.z * l)
+	}
+
+	negate() {
+		return new Vec3(-this.x, -this.y, -this.z)
+	}
+
+	length() {
+		return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z)
+	}
+
+	lengthSqr() {
+		return this.x * this.x + this.y * this.y + this.z * this.z
+	}
+
 	static dot(a, b) {
 		return a.x * b.x + a.y * b.y + a.z * b.z
 	}
 
 	static cross(a, b) {
-		return Vec3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x)
+		return new Vec3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x)
 	}
 
 	static add(a, b) {
-		return Vec3(a.x + b.x, a.y + b.y, a.z + b.z)
+		return new Vec3(a.x + b.x, a.y + b.y, a.z + b.z)
 	}
 
 	static sub(a, b) {
-		return Vec3(a.x - b.x, a.y - b.y, a.z - b.z)
+		return new Vec3(a.x - b.x, a.y - b.y, a.z - b.z)
 	}
 
 	static mul(a, b) {
-		return Vec3(a.x * b.x, a.y * b.y, a.z * b.z)
+		return new Vec3(a.x * b.x, a.y * b.y, a.z * b.z)
 	}
 
 	static div(a, b) {
-		return Vec3(a.x / b.x, a.y / b.y, a.z / b.z)
+		return new Vec3(a.x / b.x, a.y / b.y, a.z / b.z)
 	}
 }

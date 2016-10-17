@@ -1,7 +1,12 @@
+<script type='text/javascript' src='framebuffer.js'></script>
+<script type='text/javascript' src='particles.js'></script>
+<script type='text/javascript' src='quad.js'></script>
+<script type='text/javascript' src='staticgeometry.js'></script>
 <script type='text/javascript' src='vec2.js'></script>
 <script type='text/javascript' src='vec3.js'></script>
 <script type='text/javascript' src='vec4.js'></script>
 <script type='text/javascript' src='mat4.js'></script>
+<script type='text/javascript' src='gl-matrix-min.js'></script>
 <script>
 'use strict'
 
@@ -11,9 +16,11 @@ let shaderSource = {
 		'test':
 			'#version 300 es\n' +
 			'layout(location = 0) in vec2 a0;\n' +
+			'out vec2 p;\n' +
 			'void main()\n' +
 			'{\n' +
 				'gl_Position = vec4(a0, 0.0, 1.0);\n' +
+				'p = a0.xy * 0.5 + 0.5;\n' +
 			'}\n',
 
 		'particleBasic':
@@ -26,8 +33,8 @@ let shaderSource = {
 			//'in highp int gl_VertexID;\n' +
 			'void main()\n' +
 			'{\n' +
-				'gl_Position = vec4(position, 1.0);\n' +
-				'point_size = 32.0 / (position.z * 0.5 + 0.5 + 1.0);\n' +
+				'gl_Position = mvp * vec4(position, 1.0);\n' +
+				'point_size = gl_Position.w * 10.0;//32.0 / (position.z * 0.5 + 0.5 + 1.0);\n' +
 				'gl_PointSize = point_size;\n' +
 				'id = int(position.x * position.y * position.z * 12345934.0);//gl_VertexID\n' +
 				//'id = gl_VertexID;\n' +
@@ -43,9 +50,11 @@ let shaderSource = {
 			'uniform highp vec2 screen_size;\n' +
 			'uniform highp vec2 inverse_screen_size;\n' +
 			'uniform highp float time;\n' +
+			'uniform sampler2D screen;\n' +
+			'in vec2 p;\n' +
 			'void main()\n' +
 			'{\n' +
-				'frag_color = vec4(gl_FragCoord.xy * inverse_screen_size, cos(time) * 0.5 + 0.5, 0.0);\n' +
+				'frag_color = vec4(p, 0.0, 0.0) * texture(screen, p);\n' +
 			'}\n',
 
 		'particleFlat':
@@ -63,7 +72,7 @@ let shaderSource = {
 				'//if (length(gl_PointCoord * 2.0 - 1.0) > 1.0)\n' +
 					'//discard; \n' +
 				'highp float alpha = clamp(min(1.0, point_size * 0.5 - length(gl_PointCoord * point_size - point_size * 0.5)), 0.0, 1.0);\n' +
-				'vec3 col = palette(fract(float(id) / 232.234643), vec3(.03453212, .2359, .34966), vec3(.745674567,.223452345,.75564), vec3(.123412345,.7385,.12354346), vec3(.23456234,.3456234,.1346));\n' +
+				'vec3 col = vec3(1.0);//palette(fract(float(id) / 232.234643), vec3(.03453212, .2359, .34966), vec3(.745674567,.223452345,.75564), vec3(.123412345,.7385,.12354346), vec3(.23456234,.3456234,.1346));\n' +
 				'frag_color = vec4(col * alpha, alpha);\n' +
 			'}\n',
 	}
@@ -77,6 +86,7 @@ let shaderPrograms = {
 			'screen_size': null,
 			'inverse_screen_size': null,
 			'time': null,
+			'screen': null
 		}
 	},
 
@@ -89,109 +99,10 @@ let shaderPrograms = {
 	}
 }
 
-const staticGeometry = {
-	add: function(id, data) {
-		const SIZE_IN_MB = 16
-
-		if (!this.vbo) {
-			this.indexData = {}
-			this.vbo = gl.createBuffer()
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo)
-			gl.bufferData(gl.ARRAY_BUFFER, SIZE_IN_MB * 1048576, gl.STATIC_DRAW)
-			this.lastOffset = 0
-		}
-
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo)
-		gl.bufferSubData(gl.ARRAY_BUFFER, this.lastOffset, data)
-
-		this.indexData[id] = {
-			offset: this.lastOffset,
-			size: data.byteLength
-		}
-
-		this.lastOffet += data.byteLength
-
-		return this.indexData[id]
-	},
-
-	get: function(id) {
-		return this.indexData[id]
-	},
-
-	bind: function() {
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo)
-	}
-}
-
 let canvas = null
 let gl = null
 let frame = 0
 let time = 0.0
-
-class Particles {
-	constructor(nParticles) {
-		this.nParticles = nParticles
-		let goldenAngle = 2.3999632297286533222315555066336	// precision! xD
-		let altAngle = Math.PI * 2.0 - goldenAngle
-		let buffer = new Float32Array(nParticles * 6)	// position + velocity
-
-		for (let i = 1; i <= nParticles; ++i) {
-			let theta = Math.random() * Math.PI * 2.0	//(goldenAngle * i) % Math.PI
-			let phi = Math.acos(2.0 * Math.random() - 1.0)	//goldenAngle * i
-			let r = Math.pow(1.0 - Math.random(), 1.0 / 3.0)	//Math.pow(i / nParticles, 1.0 / 3.0) 
-
-			let bi = (i - 1) * 6
-			
-			buffer[bi + 0] = r * Math.cos(theta) * Math.sin(phi)
-			buffer[bi + 1] = r * Math.sin(theta) * Math.sin(phi)
-			buffer[bi + 2] = r * Math.cos(phi)
-
-			console.log(buffer[bi + 0], buffer[bi + 1], buffer[bi + 2])
-
-			buffer[bi + 3] = 0.0	//velocity[0]
-			buffer[bi + 4] = 0.0	//velocity[1]
-			buffer[bi + 5] = 0.0	//velocity[2]
-		}
-
-		this.vbo = gl.createBuffer()
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo)
-		gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.DYNAMIC_COPY)
-
-		this.vao = gl.createVertexArray()
-		gl.bindVertexArray(this.vao)
-		gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 24, 0)
-		gl.enableVertexAttribArray(0)
-		gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 24, 12)
-		gl.enableVertexAttribArray(1)
-	}
-
-	draw() {
-		gl.bindVertexArray(this.vao)
-		gl.drawArrays(gl.POINTS, 0, this.nParticles)
-	}
-}
-
-let quad = {
-	init: function() {
-		const fullScreenTriangle = [
-			0, 127,
-			-127, -2,
-			127, -2
-		]
-
-		let data = staticGeometry.add('fullScreenTriangle', new Int8Array(fullScreenTriangle))
-
-		this.vao = gl.createVertexArray()
-		gl.bindVertexArray(this.vao)
-		gl.vertexAttribPointer(0, 2, gl.BYTE, false, 0, data.offset)
-		gl.enableVertexAttribArray(0)
-	},
-
-	draw: function() {
-		gl.bindVertexArray(this.vao)
-		gl.drawArrays(gl.TRIANGLES, 0, 3)
-	}
-}
 
 function compileShader(shaderSource, shaderType) {
 	if (shaderType == 'vertex')
@@ -271,23 +182,58 @@ function renderLoop(frameTime) {
 	let dt = (frameTime - time) * 0.001
 	time = frameTime * 0.001
 
-	gl.viewport(0, 0, canvas.width, canvas.height)
+	//
+
+	let aspect = canvas.offsetWidth / canvas.offsetHeight
+	let near = 0.1
+	let far = 100.0
+	let fov = Math.PI / 2.0
+
+	/*let projection = Mat4.projection(fov, aspect, near, far)
+	let view = Mat4.lookAt(new Vec3(Math.cos(time * 0.1) * 2.5, 0.0, Math.sin(time * 0.1) * 2.5), new Vec3(0.0, 0.0, 0.0), new Vec3(0.0, 1.0, 0.0))
+	let mvp = Mat4.mul(view, projection)*/
+
+	let projection = mat4.create()
+	mat4.perspective(projection, fov, aspect, near, far)
+
+	let view = mat4.create()
+	mat4.lookAt(view,
+		[Math.cos(time * 0.1) * 2.5, 0.0, Math.sin(time * 0.1) * 2.5],
+		[0.0, 0.0, 0.0],
+		[0.0, 1.0, 0.0])
+
+	let mvp = mat4.create()
+	mat4.multiply(mvp, projection, view)
+
+	framebuffer.bind()
+	
+	gl.enable(gl.BLEND)
+	gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+	gl.useProgram(shaderPrograms['particles0'].program)
+	gl.uniformMatrix4fv(shaderPrograms['particles0'].uniforms['mvp'], false, mvp)
+	//gl.uniformMatrix4fv(shaderPrograms['particles0'].uniforms['mvp'], false, mvp.mat)
+	particles.draw()
+	gl.disable(gl.BLEND)
 
 	//
+
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+	gl.drawBuffers([gl.BACK])
+	gl.viewport(0.0, 0.0, canvas.width, canvas.height)
+
+	/*gl.enable(gl.BLEND)
+	gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+	gl.useProgram(shaderPrograms['particles0'].program)
+	gl.uniformMatrix4fv(shaderPrograms['particles0'].uniforms['mvp'], false, mvp)
+	//gl.uniformMatrix4fv(shaderPrograms['particles0'].uniforms['mvp'], false, mvp.mat)
+	particles.draw()*/
 
 	gl.useProgram(shaderPrograms['test'].program)
 	gl.uniform1f(shaderPrograms['test'].uniforms['time'], time)
 	gl.uniform2f(shaderPrograms['test'].uniforms['inverse_screen_size'], 1.0 / canvas.width, 1.0 / canvas.height)
 	gl.uniform2f(shaderPrograms['test'].uniforms['screen_size'], canvas.width, canvas.height)
+	gl.uniform1i(shaderPrograms['test'].uniforms['screen'], framebuffer.tex[0])
 	quad.draw()
-
-	gl.enable(gl.BLEND)
-	gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-	gl.useProgram(shaderPrograms['particles0'].program)
-	particles.draw()
-	gl.disable(gl.BLEND)
-
-	//
 
 	++frame
 	window.requestAnimationFrame(renderLoop)
@@ -296,6 +242,8 @@ function renderLoop(frameTime) {
 function resize() {
 	canvas.width = window.innerWidth
 	canvas.height = window.innerHeight
+
+	framebuffer.init(canvas.width, canvas.height)
 }
 
 window.addEventListener('load', () => {
