@@ -517,6 +517,14 @@ class Vec3 extends Float32Array {
 		return this.x * this.x + this.y * this.y + this.z * this.z
 	}
 
+	max() {
+		return this.x > this.y ? (this.x > this.z ? this.x : this.z) : (this.y > this.z ? this.y : this.z) 
+	}
+
+	min() {
+		return this.x < this.y ? (this.x < this.z ? this.x : this.z) : (this.y < this.z ? this.y : this.z) 
+	}
+
 	static dot(a, b) {
 		return a.x * b.x + a.y * b.y + a.z * b.z
 	}

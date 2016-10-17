@@ -44,9 +44,6 @@ class Mat4 extends Float32Array{
 
 	static projection(fov, aspect, near, far) {
 		let f = 1.0 / Math.tan(fov / 2.0)
-		console.log(f)
-		console.log(aspect)
-		console.log(f / aspect)
 		let nf = 1.0 / (near - far)
 
 		return new Mat4(
@@ -59,7 +56,6 @@ class Mat4 extends Float32Array{
 
 	static projectionInf(fov, aspect, near) {
 		let f = 1.0 / Math.tan(fov / 2.0)
-		let nf = 1.0 / (near - far)
 
 		return new Mat4(
 			f / aspect, 0.0, 0.0, 0.0,

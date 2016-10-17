@@ -8,11 +8,12 @@ const quad = {
 			127, -2
 		]
 
-		let data = staticGeometry.add('fullScreenTriangle', new Int8Array(fullScreenTriangle))
-
+		let offset = staticGeometry.addVertices(new Int8Array(fullScreenTriangle))
+		
 		this.vao = gl.createVertexArray()
 		gl.bindVertexArray(this.vao)
-		gl.vertexAttribPointer(0, 2, gl.BYTE, false, 0, data.offset)
+
+		gl.vertexAttribPointer(0, 2, gl.BYTE, false, 0, offset)
 		gl.enableVertexAttribArray(0)
 	},
 
