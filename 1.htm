@@ -34,7 +34,7 @@ let shaderSource = {
 			'void main()\n' +
 			'{\n' +
 				'gl_Position = mvp * vec4(position, 1.0);\n' +
-				'point_size = gl_Position.w * 10.0;//32.0 / (position.z * 0.5 + 0.5 + 1.0);\n' +
+				'point_size = gl_Position.w * 5.0;//32.0 / (position.z * 0.5 + 0.5 + 1.0);\n' +
 				'gl_PointSize = point_size;\n' +
 				'id = int(position.x * position.y * position.z * 12345934.0);//gl_VertexID\n' +
 				//'id = gl_VertexID;\n' +
@@ -54,7 +54,7 @@ let shaderSource = {
 			'in vec2 p;\n' +
 			'void main()\n' +
 			'{\n' +
-				'frag_color = vec4(p, 0.0, 0.0) * texture(screen, p);\n' +
+				'frag_color = texture(screen, p);\n' +
 			'}\n',
 
 		'particleFlat':
@@ -72,7 +72,7 @@ let shaderSource = {
 				'//if (length(gl_PointCoord * 2.0 - 1.0) > 1.0)\n' +
 					'//discard; \n' +
 				'highp float alpha = clamp(min(1.0, point_size * 0.5 - length(gl_PointCoord * point_size - point_size * 0.5)), 0.0, 1.0);\n' +
-				'vec3 col = vec3(1.0);//palette(fract(float(id) / 232.234643), vec3(.03453212, .2359, .34966), vec3(.745674567,.223452345,.75564), vec3(.123412345,.7385,.12354346), vec3(.23456234,.3456234,.1346));\n' +
+				'vec3 col = vec3(1.0) - palette(fract(float(id) / 232.234643), vec3(.03453212, .2359, .34966), vec3(.745674567,.223452345,.75564), vec3(.123412345,.7385,.12354346), vec3(.23456234,.3456234,.1346));\n' +
 				'frag_color = vec4(col * alpha, alpha);\n' +
 			'}\n',
 	}
@@ -187,7 +187,7 @@ function renderLoop(frameTime) {
 	let aspect = canvas.offsetWidth / canvas.offsetHeight
 	let near = 0.1
 	let far = 100.0
-	let fov = Math.PI / 2.0
+	let fov = Math.PI / 4.0
 
 	/*let projection = Mat4.projection(fov, aspect, near, far)
 	let view = Mat4.lookAt(new Vec3(Math.cos(time * 0.1) * 2.5, 0.0, Math.sin(time * 0.1) * 2.5), new Vec3(0.0, 0.0, 0.0), new Vec3(0.0, 1.0, 0.0))
@@ -229,7 +229,7 @@ function renderLoop(frameTime) {
 	particles.draw()*/
 
 	gl.activeTexture(gl.TEXTURE0)
-	gl.bindTexture(gl.TEXTURE_2D, framebuffer.tex[0])
+	gl.bindTexture(gl.TEXTURE_2D, framebuffer.textureHdr)
 
 	gl.useProgram(shaderPrograms['test'].program)
 	gl.uniform1f(shaderPrograms['test'].uniforms['time'], time)
