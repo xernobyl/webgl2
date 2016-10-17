@@ -4,7 +4,7 @@ const framebuffer = {
 	init: (maxWidth = 1920, maxHeight = 1080) => {
 		framebuffer.width = maxWidth
 		framebuffer.height = maxHeight
-		
+
 		if (framebuffer.tex) {
 			gl.deleteFramebuffer(framebuffer.framebuffer)
 			gl.deleteTexture(framebuffer.tex[1])
@@ -12,7 +12,7 @@ const framebuffer = {
 		}
 
 		framebuffer.tex = []
-		
+
 		framebuffer.tex[0] = gl.createTexture()
 		gl.bindTexture(gl.TEXTURE_2D, framebuffer.tex[0])
 		//gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB10_A2, maxWidth, maxHeight, 0, gl.RGBA, gl.UNSIGNED_INT_2_10_10_10_REV, null)
@@ -63,7 +63,9 @@ const framebuffer = {
 				break
 		}
 
+		gl.bindTexture(gl.TEXTURE_2D, null)
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+
 	},
 
 	bind: () => {
