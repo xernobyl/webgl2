@@ -8,76 +8,75 @@
 <script type='text/javascript' src='vec3.js'></script>
 <script type='text/javascript' src='vec4.js'></script>
 <script type='text/javascript' src='mat4.js'></script>
+<!--<script type='text/x-fragment' src='shaders/test.fs'></script>
+<script type='text/x-vertex' src='shaders/test.vs'></script>-->
+
+<script type='text/x-vertex' name='test'>#version 300 es
+layout(location = 0) in vec2 a0;
+out vec2 p;
+
+void main()
+{
+	gl_Position = vec4(a0, 0.0, 1.0);
+	p = a0.xy * 0.5 + 0.5;
+}
+</script>
+
+<script type='text/x-vertex' name='particleBasic'>#version 300 es
+layout(location = 0) in highp vec3 position;
+layout(location = 1) in highp vec3 velocity;
+out highp float point_size;
+flat out int id;
+uniform highp mat4 mvp;
+//in highp int gl_VertexID;
+
+void main()
+{
+	gl_Position = mvp * vec4(position, 1.0);
+	point_size = gl_Position.w * 2.5;//32.0 / (position.z * 0.5 + 0.5 + 1.0);
+	gl_PointSize = point_size;
+	id = int(position.x * position.y * position.z * 12345934.0);//gl_VertexID
+	//id = gl_VertexID;
+}
+</script>
+
+<script type='text/x-fragment' name='test'>#version 300 es
+precision highp int;
+precision highp float;
+layout(location = 0) out lowp vec4 frag_color;
+uniform highp vec2 screen_size;
+uniform highp vec2 inverse_screen_size;
+uniform highp float time;
+uniform sampler2D screen;
+in vec2 p;
+
+void main()
+{
+	frag_color = texture(screen, p);
+}
+</script>
+
+<script type='text/x-fragment' name='particleFlat'>#version 300 es
+precision highp int;
+precision highp float;
+layout(location = 0) out lowp vec4 frag_color;
+in highp float point_size;
+flat in int id;
+
+vec3 palette(in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d){return a + b * cos(6.283185307179586 * (c * t + d));}
+
+void main()
+{
+	//if (length(gl_PointCoord * 2.0 - 1.0) > 1.0)
+		//discard; 
+	highp float alpha = 0.5 * clamp(min(1.0, point_size * 0.5 - length(gl_PointCoord * point_size - point_size * 0.5)), 0.0, 1.0);
+	vec3 col = vec3(1.0) - palette(fract(float(id) / 232.234643), vec3(.03453212, .2359, .34966), vec3(.745674567,.223452345,.75564), vec3(.123412345,.7385,.12354346), vec3(.23456234,.3456234,.1346));
+	frag_color = vec4(col * alpha, alpha);
+}
+</script>
+
 <script>
 'use strict'
-
-let shaderSource = {
-	// vertex shaders
-	'vertex': {
-		'test':
-			'#version 300 es\n' +
-			'layout(location = 0) in vec2 a0;\n' +
-			'out vec2 p;\n' +
-			'void main()\n' +
-			'{\n' +
-				'gl_Position = vec4(a0, 0.0, 1.0);\n' +
-				'p = a0.xy * 0.5 + 0.5;\n' +
-			'}\n',
-
-		'particleBasic':
-			'#version 300 es\n' +
-			'layout(location = 0) in highp vec3 position;\n' +
-			'layout(location = 1) in highp vec3 velocity;\n' +
-			'out highp float point_size;\n' +
-			'flat out int id;\n' +
-			'uniform highp mat4 mvp;\n' +
-			//'in highp int gl_VertexID;\n' +
-			'void main()\n' +
-			'{\n' +
-				'gl_Position = mvp * vec4(position, 1.0);\n' +
-				'point_size = gl_Position.w * 2.5;//32.0 / (position.z * 0.5 + 0.5 + 1.0);\n' +
-				'gl_PointSize = point_size;\n' +
-				'id = int(position.x * position.y * position.z * 12345934.0);//gl_VertexID\n' +
-				//'id = gl_VertexID;\n' +
-			'}\n',
-	},
-	// fragment shaders
-	'fragment': {
-		'test':
-			'#version 300 es\n' +
-			'precision highp int;\n' +
-			'precision highp float;\n' +
-			'layout(location = 0) out lowp vec4 frag_color;\n' +
-			'uniform highp vec2 screen_size;\n' +
-			'uniform highp vec2 inverse_screen_size;\n' +
-			'uniform highp float time;\n' +
-			'uniform sampler2D screen;\n' +
-			'in vec2 p;\n' +
-			'void main()\n' +
-			'{\n' +
-				'frag_color = texture(screen, p);\n' +
-			'}\n',
-
-		'particleFlat':
-			'#version 300 es\n' +
-			'precision highp int;\n' +
-			'precision highp float;\n' +
-			'layout(location = 0) out lowp vec4 frag_color;\n' +
-			'in highp float point_size;\n' +
-			'flat in int id;\n' +
-
-			'vec3 palette(in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d){return a + b * cos(6.283185307179586 * (c * t + d));}\n' +
-
-			'void main()\n' +
-			'{\n' +
-				'//if (length(gl_PointCoord * 2.0 - 1.0) > 1.0)\n' +
-					'//discard; \n' +
-				'highp float alpha = 0.5 * clamp(min(1.0, point_size * 0.5 - length(gl_PointCoord * point_size - point_size * 0.5)), 0.0, 1.0);\n' +
-				'vec3 col = vec3(1.0) - palette(fract(float(id) / 232.234643), vec3(.03453212, .2359, .34966), vec3(.745674567,.223452345,.75564), vec3(.123412345,.7385,.12354346), vec3(.23456234,.3456234,.1346));\n' +
-				'frag_color = vec4(col * alpha, alpha);\n' +
-			'}\n',
-	}
-}
 
 let shaderPrograms = {
 	'test': {
@@ -156,21 +155,25 @@ function linkProgram(shaders, attribs) {
 let particles = null
 
 function load() {
-	let compiledShader = {}
-
-	for (let shaderType in shaderSource) {
-		compiledShader[shaderType] = {}
-		for (let shader in shaderSource[shaderType]) {
-			compiledShader[shaderType][shader] = compileShader(shaderSource[shaderType][shader], shaderType)
-			if (!compiledShader[shaderType][shader]) {
-				return false
+	const shaderTypes = ['fragment', 'vertex']
+	let compiledShader = { vertex: {}, fragment: {}}
+	let scripts = document.getElementsByTagName('script')
+	
+	for (let script in scripts) {
+		for (let i in shaderTypes) {
+			let shaderType = shaderTypes[i]
+			if (scripts[script].type == ('text/x-' + shaderType)) {
+				let name = scripts[script].getAttribute('name')
+				console.log(name, shaderType)
+				compiledShader[shaderType][name] = compileShader(scripts[script].firstChild.nodeValue, shaderType)
 			}
 		}
 	}
 
 	for (let program in shaderPrograms) {
 		let shaders = []
-		for (let shaderType in shaderSource) {
+		for (let i in shaderTypes) {
+			let shaderType = shaderTypes[i]
 			for (let shader in shaderPrograms[program][shaderType]) {
 				shaders.push(compiledShader[shaderType][shaderPrograms[program][shaderType][shader]])
 			}
@@ -187,7 +190,7 @@ function load() {
 
 	quad.init()
 	cube.init()
-	particles = new Particles(10000)
+	particles = new Particles(50000)
 
 	for (let i = 0; i < 4096; ++i) {
 		pointLights.push({
