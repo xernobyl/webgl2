@@ -33,7 +33,7 @@ uniform highp mat4 mvp;
 void main()
 {
 	gl_Position = mvp * vec4(position, 1.0);
-	point_size = gl_Position.w * 2.5;//32.0 / (position.z * 0.5 + 0.5 + 1.0);
+	point_size = gl_Position.w * 1.25;//32.0 / (position.z * 0.5 + 0.5 + 1.0);
 	gl_PointSize = point_size;
 	id = int(position.x * position.y * position.z * 12345934.0);//gl_VertexID
 	//id = gl_VertexID;
@@ -66,12 +66,57 @@ flat in int id;
 vec3 palette(in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d){return a + b * cos(6.283185307179586 * (c * t + d));}
 
 void main()
-{
-	//if (length(gl_PointCoord * 2.0 - 1.0) > 1.0)
-		//discard; 
+{ 
 	highp float alpha = 0.5 * clamp(min(1.0, point_size * 0.5 - length(gl_PointCoord * point_size - point_size * 0.5)), 0.0, 1.0);
+	if (alpha <= 0.0)
+		discard;
 	vec3 col = vec3(1.0) - palette(fract(float(id) / 232.234643), vec3(.03453212, .2359, .34966), vec3(.745674567,.223452345,.75564), vec3(.123412345,.7385,.12354346), vec3(.23456234,.3456234,.1346));
 	frag_color = vec4(col * alpha, alpha);
+}
+</script>
+
+<script type='text/x-vertex' name='flat'>#version 300 es
+layout(location = 0) in highp vec3 position;
+layout(location = 1) in highp vec3 normal;
+layout(location = 2) in highp vec2 uv;
+out highp vec3 n;
+uniform highp mat4 mvp, mv;
+
+void main()
+{
+	gl_Position = mvp * vec4(position, 1.0);
+	n = (mv * vec4(normal, 0.0)).xyz;
+}
+</script>
+
+<script type='text/x-fragment' name='flat'>#version 300 es
+layout(location = 0) out lowp vec4 frag_color;
+precision highp int;
+precision highp float;
+in vec3 n;
+
+void main()
+{ 
+	frag_color = vec4(normalize(n) * 0.5 + 0.5, 0.0);
+}
+</script>
+
+<script type='text/x-fragment' name='srgb'>#version 300 es
+precision highp float;
+vec3 LinearTosRGB(vec3 c)
+{ 
+	return vec3(
+		c.r <= 0.0031308 ? 12.92 * c.r : 1.055 * pow(c.r, 1.0 / 2.4) - 0.055,
+		c.g <= 0.0031308 ? 12.92 * c.g : 1.055 * pow(c.g, 1.0 / 2.4) - 0.055,
+		c.b <= 0.0031308 ? 12.92 * c.b : 1.055 * pow(c.b, 1.0 / 2.4) - 0.055);
+}
+
+vec3 sRGBToLinear(vec3 c)
+{
+	return vec3(
+		c.r <= 0.04045 ? c.r / 12.92 : pow(c.r / 1.055 + 0.055 / 1.055, 2.4),
+		c.g <= 0.04045 ? c.g / 12.92 : pow(c.g / 1.055 + 0.055 / 1.055, 2.4),
+		c.b <= 0.04045 ? c.b / 12.92 : pow(c.b / 1.055 + 0.055 / 1.055, 2.4));
 }
 </script>
 
@@ -95,6 +140,15 @@ let shaderPrograms = {
 		'vertex': ['particleBasic'],
 		'uniforms': {
 			'mvp': null
+		}
+	},
+
+	'flat': {
+		'fragment': ['flat'],
+		'vertex': ['flat'],
+		'uniforms': {
+			'mvp': null,
+			'mv': null,
 		}
 	}
 }
@@ -213,11 +267,18 @@ function renderLoop(frameTime) {
 	camera.aspect = canvas.offsetWidth / canvas.offsetHeight
 	//camera.focalLength = 8.0
 	camera.updateProjection()
-	camera.lookAt(new Vec3(Math.cos(time * 0.1) * 2.5, 0.0, Math.sin(time * 0.1) * 2.5), new Vec3(0.0, 0.0, 0.0), new Vec3(0.0, 1.0, 0.0))
+	camera.lookAt(new Vec3(Math.cos(time * 0.1) * 5.0, 0.0, Math.sin(time * 0.1) * 5.0), new Vec3(0.0, 0.0, 0.0), new Vec3(0.0, 1.0, 0.0))
 	camera.update()
 
 	framebuffer.bind()
 	gl.clear(gl.COLOR_BUFFER_BIT)
+
+	gl.enable(gl.CULL_FACE)
+	gl.useProgram(shaderPrograms['flat'].program)
+	gl.uniformMatrix4fv(shaderPrograms['flat'].uniforms['mvp'], false, camera.mvp)
+	gl.uniformMatrix4fv(shaderPrograms['flat'].uniforms['mv'], false, camera.view)
+	cube.draw()
+	gl.disable(gl.CULL_FACE)
 
 	gl.enable(gl.BLEND)
 	//gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
