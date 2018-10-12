@@ -7,23 +7,22 @@ class Camera {
 		this.near = near
 		this.far = far
 
-		this.view = new Mat4()
+		this.projection = mat4.create()
+		this.mvp = mat4.create()
+		this.view = mat4.create()
 		this.updateProjection()
 	}
 
 	lookAt(position, target, up) {
-		this.view = Mat4.lookAt(position, target, up)
+		mat4.lookAt(this.view, position, target, up)
 	}
 
 	updateProjection() {
-		if (this.far == Infinity)
-			this.projection = Mat4.projectionInf(this.fov, this.aspect, this.near)
-		else
-			this.projection = Mat4.projection(this.fov, this.aspect, this.near, this.far)
+		mat4.perspective(this.projection, this.fov, this.aspect, this.near, this.far)
 	}
-	
+
 	update() {
-		this.mvp = Mat4.mul(this.projection, this.view)
+		mat4.multiply(this.mvp, this.projection, this.view)
 	}
 
 	/*set focalLength(mm) {
