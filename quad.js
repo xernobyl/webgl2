@@ -1,7 +1,7 @@
 'use strict'
 
-const quad = {
-	init: function() {
+class Quad {
+	static init() {
 		const fullScreenTriangle = [
 			0, 127,
 			-127, -2,
@@ -10,14 +10,14 @@ const quad = {
 
 		this.vao = gl.createVertexArray()
 		gl.bindVertexArray(this.vao)
-		
-		let offset = staticGeometry.addVertices(new Int8Array(fullScreenTriangle))
-	
+
+		let offset = StaticGeometry.addVertices(new Int8Array(fullScreenTriangle))
+
 		gl.vertexAttribPointer(0, 2, gl.BYTE, false, 0, offset)
 		gl.enableVertexAttribArray(0)
-	},
+	}
 
-	draw: function() {
+	static draw() {
 		gl.bindVertexArray(this.vao)
 		gl.drawArrays(gl.TRIANGLES, 0, 3)
 	}

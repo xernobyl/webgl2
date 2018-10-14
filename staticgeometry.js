@@ -1,7 +1,7 @@
 'use strict'
 
-const staticGeometry = {
-	addVertices: function(data) {
+class StaticGeometry {
+	static addVertices(data) {
 		const SIZE_IN_MB = 16
 
 		if (this.vbo === undefined) {
@@ -12,6 +12,11 @@ const staticGeometry = {
 		}
 		else {
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo)
+
+			console.log('before alignment', this.lastOffset)
+			const alignment = data.byteLength / data.length
+			this.lastOffset = Math.ceil(this.lastOffset / alignment) * alignment
+			console.log('after alignment', this.lastOffset)
 		}
 
 		gl.bufferSubData(gl.ARRAY_BUFFER, this.lastOffset, data)
@@ -23,15 +28,15 @@ const staticGeometry = {
 			console.log('WARNING: INCREASE MAX SIZE TO ' + this.lastOffset)
 
 		return offset
-	},
+	}
 
-	bindVertices: function() {
+	static bindVertices() {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo)
-	},
+	}
 
-	addElements: function(data) {
+	static addElements(data) {
 		const ELEMENT_SIZE_IN_MB = 2
-				
+
 		if (this.ebo === undefined) {
 			this.ebo = gl.createBuffer()
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ebo)
@@ -40,6 +45,11 @@ const staticGeometry = {
 		}
 		else {
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ebo)
+
+			console.log('before alignment', this.lastElementOffset)
+			const alignment = data.byteLength / data.length
+			this.lastElementOffset = Math.ceil(this.lastElementOffset / alignment) * alignment
+			console.log('after alignment', this.lastElementOffset)
 		}
 
 		gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, this.lastElementOffset, data)
@@ -51,9 +61,9 @@ const staticGeometry = {
 			console.log('WARNING: INCREASE MAX SIZE TO ' + this.lastElementOffset)
 
 		return offset
-	},
+	}
 
-	bindElements: function() {
+	static bindElements() {
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ebo)
-	},
+	}
 }

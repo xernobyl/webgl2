@@ -1,18 +1,18 @@
 'use strict'
 
-const framebuffer = {
-	init: (maxWidth = 1920, maxHeight = 1080) => {
-		framebuffer.width = maxWidth
-		framebuffer.height = maxHeight
+class Framebuffer {
+	static init(maxWidth = 1920, maxHeight = 1080) {
+		this.width = maxWidth
+		this.height = maxHeight
 
-		if (framebuffer.tex) {
-			gl.deleteFramebuffer(framebuffer.framebuffer)
-			gl.deleteTexture(framebuffer.textureDepth)
-			gl.deleteTexture(framebuffer.textureHdr)
+		if (this.tex) {
+			gl.deleteFramebuffer(this.framebuffer)
+			gl.deleteTexture(this.textureDepth)
+			gl.deleteTexture(this.textureHdr)
 		}
 
-		framebuffer.textureHdr = gl.createTexture()
-		gl.bindTexture(gl.TEXTURE_2D, framebuffer.textureHdr)
+		this.textureHdr = gl.createTexture()
+		gl.bindTexture(gl.TEXTURE_2D, this.textureHdr)
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB10_A2, maxWidth, maxHeight, 0, gl.RGBA, gl.UNSIGNED_INT_2_10_10_10_REV, null)
 		//gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, maxWidth, maxHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
 		//gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB16F, maxWidth, maxHeight, 0, gl.RGB, gl.HALF_FLOAT, null)
@@ -21,8 +21,8 @@ const framebuffer = {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
 
-		framebuffer.textureDepth = gl.createTexture()
-		gl.bindTexture(gl.TEXTURE_2D, framebuffer.textureDepth)
+		this.textureDepth = gl.createTexture()
+		gl.bindTexture(gl.TEXTURE_2D, this.textureDepth)
 		//gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH32F_STENCIL8, maxWidth, maxHeight, 0, gl.DEPTH_STENCIL, gl.FLOAT_32_UNSIGNED_INT_24_8_REV, null)
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT32F, maxWidth, maxHeight, 0, gl.DEPTH_COMPONENT, gl.FLOAT, null)
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
@@ -30,11 +30,11 @@ const framebuffer = {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 
-		framebuffer.framebuffer = gl.createFramebuffer()
-		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer.framebuffer)
-		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, framebuffer.textureHdr, 0)
-		//gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.TEXTURE_2D, framebuffer.textureDepth, 0)
-		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, framebuffer.textureDepth, 0)
+		this.framebuffer = gl.createFramebuffer()
+		gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer)
+		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.textureHdr, 0)
+		//gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.TEXTURE_2D, this.textureDepth, 0)
+		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, this.textureDepth, 0)
 
 		gl.drawBuffers([gl.COLOR_ATTACHMENT0])
 		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT)
@@ -64,11 +64,11 @@ const framebuffer = {
 		gl.bindTexture(gl.TEXTURE_2D, null)
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null)
 
-	},
+	}
 
-	bind: () => {
-		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer.framebuffer)
+	static bind() {
+		gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer)
 		gl.drawBuffers([gl.COLOR_ATTACHMENT0])	// needed?
-		gl.viewport(0.0, 0.0, framebuffer.width, framebuffer.height)
+		gl.viewport(0.0, 0.0, this.width, this.height)
 	}
 }
