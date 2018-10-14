@@ -21,7 +21,7 @@ class StaticGeometry {
 
 		gl.bufferSubData(gl.ARRAY_BUFFER, this.lastOffset, data)
 
-		let offset = this.lastOffset
+		const offset = this.lastOffset
 		this.lastOffset += data.byteLength
 
 		if (SIZE_IN_MB * 1048576 < this.lastOffset)
@@ -54,7 +54,7 @@ class StaticGeometry {
 
 		gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, this.lastElementOffset, data)
 
-		let offset = this.lastElementOffset
+		const offset = this.lastElementOffset
 		this.lastElementOffset += data.byteLength
 
 		if (ELEMENT_SIZE_IN_MB * 1048576 < this.lastElementOffset)
