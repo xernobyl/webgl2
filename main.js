@@ -228,7 +228,8 @@ let shaderPrograms = {
 let canvas = null
 let gl = null
 let frame = 0
-let time = 0.0
+let time = 0.0        // milliseconds
+let timeOffset = 0.0  // milliseconds
 
 let pointLights = []
 
@@ -335,15 +336,19 @@ function load() {
 let camera = new Camera(Math.PI / 2.0, 1.0, 0.1, 100.0)
 
 function renderLoop(frameTime) {
-	let dt = (frameTime - time) * 0.001
-	time = frameTime * 0.001
+  if (frame == 0) {
+    timeOffset = frameTime
+  }
+
+	let dt = (frameTime - time)
+	time = frameTime - timeOffset
 
 	//
 
 	camera.aspect = canvas.offsetWidth / canvas.offsetHeight
 	//camera.focalLength = 8.0
 	camera.updateProjection()
-	camera.lookAt(vec3.fromValues(Math.cos(time * 0.1) * 5.0, 2.5, Math.sin(time * 0.1) * 5.0), vec3.fromValues(0.0, 0.0, 0.0), vec3.fromValues(0.0, 1.0, 0.0))
+	camera.lookAt(vec3.fromValues(Math.cos(time / 1000.0 * 0.1) * 5.0, 2.5, Math.sin(time / 1000.0 * 0.1) * 5.0), vec3.fromValues(0.0, 0.0, 0.0), vec3.fromValues(0.0, 1.0, 0.0))
 	//camera.lookAt(vec3.fromValues(0.0, 0.0, -5.0), vec3.fromValues(0.0, 0.0, 0.0), vec3.fromValues(0.0, 1.0, 0.0))
 	camera.update()
 
@@ -391,37 +396,56 @@ function renderLoop(frameTime) {
 	Quad.draw(gl)
 
 	++frame
-	window.requestAnimationFrame(renderLoop)
+	requestAnimationFrame(renderLoop)
 }
 
 function resize() {
-	canvas.width = window.innerWidth
-	canvas.height = window.innerHeight
+	const dpr = devicePixelRatio || 1
+  const width = Math.floor(innerWidth * dpr)
+  const height = Math.floor(innerHeight * dpr)
+
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width
+    canvas.height = height
+  }
 
 	Framebuffer.init(gl, canvas.width, canvas.height)
 }
 
-window.addEventListener('load', () => {
+addEventListener('load', () => {
 	canvas = document.createElement('canvas')
-	canvas.style.width = '100%'
-	canvas.style.height = '100%'
-	canvas.style.top = '0'
-	canvas.style.left = '0'
-	canvas.style.position = 'fixed'
-	//canvas.style.padding = '0'
-	//canvas.style.zIndex = '-1'
+
+  Object.assign(document.body.style, {
+    margin: '0',
+    padding: '0',
+    overflow: 'hidden',
+    position: 'fixed',
+    width: '100vw',
+    height: '100vh'
+  })
+  
+  Object.assign(canvas.style, {
+    display: 'block',
+    width: '100%',
+    height: '100%'
+  })
 
 	gl = canvas.getContext('webgl2', {alpha: false, depth: false, stencil: false, antialias: false})
 	if (gl == null) {
-		alert('WebGL 2.0 not supported apparently.\n' +
-			'Check if it is enabled if you think this should work.')
+		alert('WebGL 2.0 not supported apparently. Weird.\n')
 		return
 	}
+
+  const ext = gl.getExtension('EXT_color_buffer_float')
+  if (!ext) {
+    console.error("Floating-point rendering not supported! We kind of want that.")
+    return
+  }
 
 	console.log(gl.getSupportedExtensions())
 
 	resize()
-	window.addEventListener('resize', resize)
+	addEventListener('resize', resize)
 
 	document.body.appendChild(canvas)
 
@@ -431,5 +455,5 @@ window.addEventListener('load', () => {
 		return
 	}
 
-	renderLoop(0.0)
+	requestAnimationFrame(renderLoop)
 })
