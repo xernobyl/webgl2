@@ -1,6 +1,6 @@
-'use strict'
+import { mat4 } from './gl-matrix/index.js'
 
-class Camera {
+export class Camera {
 	constructor(fov = Math.PI / 2.0, aspect = 1.0, near = 0.1, far = Infinity) {
 		this.fov = fov
 		this.aspect = aspect

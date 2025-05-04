@@ -1,7 +1,5 @@
-'use strict'
-
-class StaticGeometry {
-	static addVertices(data) {
+export class StaticGeometry {
+	static addVertices(gl, data) {
 		const SIZE_IN_MB = 16
 
 		if (this.vbo === undefined) {
@@ -30,11 +28,11 @@ class StaticGeometry {
 		return offset
 	}
 
-	static bindVertices() {
+	static bindVertices(gl) {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo)
 	}
 
-	static addElements(data) {
+	static addElements(gl, data) {
 		const ELEMENT_SIZE_IN_MB = 2
 
 		if (this.ebo === undefined) {
@@ -63,7 +61,7 @@ class StaticGeometry {
 		return offset
 	}
 
-	static bindElements() {
+	static bindElements(gl) {
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ebo)
 	}
 }

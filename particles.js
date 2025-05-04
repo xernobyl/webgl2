@@ -1,7 +1,7 @@
-'use strict'
+import { vec3 } from './gl-matrix/index.js'
 
-class Particles {
-	constructor(nParticles) {
+export class Particles {
+	constructor(gl, nParticles) {
 		this.nParticles = nParticles
 		let buffer = new Float32Array(nParticles * 6)	// position + velocity
 
@@ -36,7 +36,7 @@ class Particles {
 		gl.enableVertexAttribArray(1)
 	}
 
-	draw() {
+	draw(gl) {
 		gl.bindVertexArray(this.vao)
 		gl.drawArrays(gl.POINTS, 0, this.nParticles)
 	}

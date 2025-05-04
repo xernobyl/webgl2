@@ -1,7 +1,7 @@
-'use strict'
+import { StaticGeometry } from './staticgeometry.js'
 
-class TessPlane {
-  constructor(res) {
+export class TessPlane {
+  constructor(gl, res) {
     const t = this.createBuffers(res)
     this.count = t[1].length
 
@@ -10,8 +10,8 @@ class TessPlane {
     this.vao = gl.createVertexArray()
 		gl.bindVertexArray(this.vao)
 
-    const vertexOffet = StaticGeometry.addVertices(new Float32Array(t[0]))
-    this.elementOffset = StaticGeometry.addElements(new Uint16Array(t[1]))
+    const vertexOffet = StaticGeometry.addVertices(gl, new Float32Array(t[0]))
+    this.elementOffset = StaticGeometry.addElements(gl, new Uint16Array(t[1]))
 
 		gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8, vertexOffet)
     gl.enableVertexAttribArray(0)
@@ -61,7 +61,7 @@ class TessPlane {
     return [vertexBuffer, indexBuffer]
   }
 
-  draw() {
+  draw(gl) {
 		gl.bindVertexArray(this.vao)
 		gl.drawElements(gl.TRIANGLES, this.count, gl.UNSIGNED_SHORT, this.elementOffset)
   }

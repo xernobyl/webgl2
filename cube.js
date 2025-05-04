@@ -1,7 +1,7 @@
-'use strict'
+import { StaticGeometry } from './staticgeometry.js'
 
-class Cube {
-  static init() {
+export class Cube {
+  static init(gl) {
     const vertexBuffer = new Int8Array([
       1,1,1,0,0,1,1,1,-1,1,1,0,0,1,0,1,-1,-1,1,0,0,1,0,0,1,-1,1,0,0,1,1,0,1,1,1,1,0,0,0,1,1,-1,1,1,0,0,0,0,1,-1,-1,1,0,0,1,0,1,1,-1,1,0,0,1,1,1,1,1,0,1,0,1,0,1,1,-1,0,1,0,1,1,-1,1,-1,0,1,0,0,1,-1,1,1,0,1,0,0,0,-1,1,1,-1,0,0,1,1,-1,1,-1,-1,0,0,0,1,-1,-1,-1,-1,0,0,0,0,-1,-1,1,-1,0,0,1,0,-1,-1,-1,0,-1,0,0,0,1,-1,-1,0,-1,0,1,0,1,-1,1,0,-1,0,1,1,-1,-1,1,0,-1,0,0,1,1,-1,-1,0,0,-1,0,0,-1,-1,-1,0,0,-1,1,0,-1,1,-1,0,0,-1,1,1,1,1,-1,0,0,-1,0,1])
     const indicesBuffer = new Uint8Array([
@@ -13,8 +13,8 @@ class Cube {
 		this.vao = gl.createVertexArray()
 		gl.bindVertexArray(this.vao)
 
-    let vertexOffet = StaticGeometry.addVertices(vertexBuffer)
-    this.elementOffset = StaticGeometry.addElements(indicesBuffer)
+    let vertexOffet = StaticGeometry.addVertices(gl, vertexBuffer)
+    this.elementOffset = StaticGeometry.addElements(gl, indicesBuffer)
 
 		gl.vertexAttribPointer(0, 3, gl.BYTE, false, 8, vertexOffet + 0)
     gl.enableVertexAttribArray(0)
@@ -24,12 +24,12 @@ class Cube {
     gl.enableVertexAttribArray(2)
   }
 
-  static draw() {
+  static draw(gl) {
 		gl.bindVertexArray(this.vao)
 		gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_BYTE, this.elementOffset)
   }
 
-  static drawOutlines() {
+  static drawOutlines(gl) {
     gl.bindVertexArray(this.vao)
     gl.drawElements(gl.LINES, 24, gl.UNSIGNED_BYTE, this.elementOffset + 36)
   }

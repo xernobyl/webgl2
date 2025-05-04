@@ -1,7 +1,7 @@
-'use strict'
+import { StaticGeometry } from './staticgeometry.js'
 
-class Quad {
-	static init() {
+export class Quad {
+	static init(gl) {
 		const fullScreenTriangle = [
 			0, 127,
 			-127, -2,
@@ -11,13 +11,13 @@ class Quad {
 		this.vao = gl.createVertexArray()
 		gl.bindVertexArray(this.vao)
 
-		let offset = StaticGeometry.addVertices(new Int8Array(fullScreenTriangle))
+		let offset = StaticGeometry.addVertices(gl, new Int8Array(fullScreenTriangle))
 
 		gl.vertexAttribPointer(0, 2, gl.BYTE, false, 0, offset)
 		gl.enableVertexAttribArray(0)
 	}
 
-	static draw() {
+	static draw(gl) {
 		gl.bindVertexArray(this.vao)
 		gl.drawArrays(gl.TRIANGLES, 0, 3)
 	}

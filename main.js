@@ -1,4 +1,10 @@
-'use strict'
+import { vec3 } from './gl-matrix/index.js'
+import { Camera } from './camera.js'
+import { Framebuffer } from './framebuffer.js'
+import { Quad } from './quad.js'
+import { Cube } from './cube.js'
+import { TessPlane } from './tessplane.js'
+import { Particles } from './particles.js'
 
 const shaderSource = {
 	vertex: {
@@ -311,10 +317,10 @@ function load() {
 		}
 	}
 
-	Quad.init()
-	Cube.init()
-	plane = new TessPlane(9)
-	particles = new Particles(50000)
+	Quad.init(gl)
+	Cube.init(gl)
+	plane = new TessPlane(gl, 9)
+	particles = new Particles(gl, 50000)
 
 	for (let i = 0; i < 4096; ++i) {
 		pointLights.push({
@@ -341,7 +347,7 @@ function renderLoop(frameTime) {
 	//camera.lookAt(vec3.fromValues(0.0, 0.0, -5.0), vec3.fromValues(0.0, 0.0, 0.0), vec3.fromValues(0.0, 1.0, 0.0))
 	camera.update()
 
-	Framebuffer.bind()
+	Framebuffer.bind(gl)
 	gl.clearColor(1.0, 1.0, 1.0, 0.0)
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
@@ -350,14 +356,14 @@ function renderLoop(frameTime) {
 	gl.useProgram(shaderPrograms['plane'].program)
 	gl.uniformMatrix4fv(shaderPrograms['plane'].uniforms['mvp'], false, camera.mvp)
 	gl.uniformMatrix4fv(shaderPrograms['plane'].uniforms['mv'], false, camera.view)
-	plane.draw()
+	plane.draw(gl)
 	gl.disable(gl.CULL_FACE)
 
 	gl.useProgram(shaderPrograms['color'].program)
 	gl.uniformMatrix4fv(shaderPrograms['color'].uniforms['mvp'], false, camera.mvp)
 	gl.uniformMatrix4fv(shaderPrograms['color'].uniforms['mv'], false, camera.view)
 	gl.uniform4f(shaderPrograms['color'].uniforms['color'], 0.0, 0.0, 0.0, 0.0);
-	Cube.drawOutlines()
+	Cube.drawOutlines(gl)
 	gl.disable(gl.DEPTH_TEST)
 
 	/*gl.enable(gl.BLEND)
@@ -382,7 +388,7 @@ function renderLoop(frameTime) {
 	gl.uniform2f(shaderPrograms['test'].uniforms['inverse_screen_size'], 1.0 / canvas.width, 1.0 / canvas.height)
 	gl.uniform2f(shaderPrograms['test'].uniforms['screen_size'], canvas.width, canvas.height)
 	gl.uniform1i(shaderPrograms['test'].uniforms['screen'], 0)
-	Quad.draw()
+	Quad.draw(gl)
 
 	++frame
 	window.requestAnimationFrame(renderLoop)
@@ -392,7 +398,7 @@ function resize() {
 	canvas.width = window.innerWidth
 	canvas.height = window.innerHeight
 
-	Framebuffer.init(canvas.width, canvas.height)
+	Framebuffer.init(gl, canvas.width, canvas.height)
 }
 
 window.addEventListener('load', () => {
