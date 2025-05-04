@@ -1,13 +1,3 @@
-<script type='text/javascript' src='framebuffer.js'></script>
-<script type='text/javascript' src='particles.js'></script>
-<script type='text/javascript' src='quad.js'></script>
-<script type='text/javascript' src='cube.js'></script>
-<script type='text/javascript' src='staticgeometry.js'></script>
-<script type='text/javascript' src='camera.js'></script>
-<script type='text/javascript' src='tessplane.js'></script>
-<script type='text/javascript' src='gl-matrix-min.js'></script>
-
-<script>
 'use strict'
 
 const shaderSource = {
@@ -53,6 +43,18 @@ void main()
 {
 	gl_Position = mvp * vec4(position, 1.0);
 	n = (mv * vec4(normal, 0.0)).xyz;
+}`,
+
+		plane:
+`#version 300 es
+layout(location = 0) in highp vec3 position;
+out highp vec3 pos;
+uniform highp mat4 mvp, mv;
+
+void main()
+{
+	pos = 6.0 * vec3(position.y, 0.05 * sin(position.x * 50.0) + 0.05 * cos(position.y * 50.0), position.x);
+	gl_Position = mvp * vec4(pos, 1.0);
 }`,
 	},
 
@@ -117,6 +119,26 @@ void main()
 	frag_color = color;
 }`,
 
+		plane:
+`#version 300 es
+layout(location = 0) out lowp vec4 frag_color;
+precision highp int;
+precision highp float;
+in vec3 pos;
+
+const float PI = 3.1415926535897932384626433832795;
+
+void main()
+{
+	if (pos.x > 1.0 || pos.y > 1.0 || pos.z > 1.0 || pos.x < -1.0 || pos.y < -1.0 || pos.z < -1.0)
+		discard;
+
+	vec2 t = vec2(cos(pos.z * 50.0 / PI / 2.0), -sin(pos.x * 50.0 / PI / 2.0));
+		vec3 n = normalize(vec3(t.x, 1.0 - dot(t, t), t.y));
+
+		frag_color = vec4(clamp(dot(n, vec3(0.0, 1.0, 0.0)) * vec3(1.0, 0.5, 0.125), vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0)) + vec3(0.125, 0.125, 0.25), 0.0);
+}`,
+
 		colorSpace:
 `#version 300 es
 precision highp float;
@@ -139,7 +161,7 @@ vec3 sRGBToLinear(vec3 c)
 }
 
 let shaderPrograms = {
-	'test': {
+	test: {
 		'fragment': ['test'],
 		'vertex': ['test'],
 		'uniforms': {
@@ -150,7 +172,7 @@ let shaderPrograms = {
 		}
 	},
 
-	'particles0': {
+	particles0: {
 		'fragment': ['particleFlat'],
 		'vertex': ['particleBasic'],
 		'uniforms': {
@@ -158,7 +180,7 @@ let shaderPrograms = {
 		}
 	},
 
-	'flat': {
+	flat: {
 		'fragment': ['flat'],
 		'vertex': ['flat'],
 		'uniforms': {
@@ -167,9 +189,19 @@ let shaderPrograms = {
 		}
 	},
 
-	'color': {
+	color: {
 		'fragment': ['color'],
 		'vertex': ['flat'],
+		'uniforms': {
+			'mvp': null,
+			'mv': null,
+			'color': null,
+		}
+	},
+
+	plane: {
+		'fragment': ['plane'],
+		'vertex': ['plane'],
 		'uniforms': {
 			'mvp': null,
 			'mv': null,
@@ -281,7 +313,7 @@ function load() {
 
 	Quad.init()
 	Cube.init()
-	plane = new TessPlane(6)
+	plane = new TessPlane(9)
 	particles = new Particles(50000)
 
 	for (let i = 0; i < 4096; ++i) {
@@ -294,7 +326,7 @@ function load() {
 	return true
 }
 
-let camera = new Camera(Math.PI / 4.0, 1.0, 0.1, 100.0)
+let camera = new Camera(Math.PI / 2.0, 1.0, 0.1, 100.0)
 
 function renderLoop(frameTime) {
 	let dt = (frameTime - time) * 0.001
@@ -313,21 +345,20 @@ function renderLoop(frameTime) {
 	gl.clearColor(1.0, 1.0, 1.0, 0.0)
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
+	gl.enable(gl.DEPTH_TEST)
 	gl.enable(gl.CULL_FACE)
+	gl.useProgram(shaderPrograms['plane'].program)
+	gl.uniformMatrix4fv(shaderPrograms['plane'].uniforms['mvp'], false, camera.mvp)
+	gl.uniformMatrix4fv(shaderPrograms['plane'].uniforms['mv'], false, camera.view)
+	plane.draw()
+	gl.disable(gl.CULL_FACE)
+
 	gl.useProgram(shaderPrograms['color'].program)
 	gl.uniformMatrix4fv(shaderPrograms['color'].uniforms['mvp'], false, camera.mvp)
 	gl.uniformMatrix4fv(shaderPrograms['color'].uniforms['mv'], false, camera.view)
 	gl.uniform4f(shaderPrograms['color'].uniforms['color'], 0.0, 0.0, 0.0, 0.0);
 	Cube.drawOutlines()
-
-	gl.enable(gl.DEPTH_TEST)
-	gl.useProgram(shaderPrograms['color'].program)
-	gl.uniformMatrix4fv(shaderPrograms['color'].uniforms['mvp'], false, camera.mvp)
-	gl.uniformMatrix4fv(shaderPrograms['color'].uniforms['mv'], false, camera.view)
-	gl.uniform4f(shaderPrograms['color'].uniforms['color'], 1.0, 0.0, 0.0, 0.0);
-	plane.draw()
 	gl.disable(gl.DEPTH_TEST)
-	gl.disable(gl.CULL_FACE)
 
 	/*gl.enable(gl.BLEND)
 	gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
@@ -396,4 +427,3 @@ window.addEventListener('load', () => {
 
 	renderLoop(0.0)
 })
-</script>
