@@ -10,13 +10,13 @@ export class Cube {
       0, 1, 0, 3, 0, 7, 1, 2, 2, 5, 5, 6, 6, 7, 10, 11, 13, 14, 15, 16, 20, 21, 22, 23
     ])
 
-		this.vao = gl.createVertexArray()
-		gl.bindVertexArray(this.vao)
+    this.vao = gl.createVertexArray()
+    gl.bindVertexArray(this.vao)
 
     let vertexOffet = StaticGeometry.addVertices(gl, vertexBuffer)
     this.elementOffset = StaticGeometry.addElements(gl, indicesBuffer)
 
-		gl.vertexAttribPointer(0, 3, gl.BYTE, false, 8, vertexOffet + 0)
+    gl.vertexAttribPointer(0, 3, gl.BYTE, false, 8, vertexOffet + 0)
     gl.enableVertexAttribArray(0)
     gl.vertexAttribPointer(1, 3, gl.BYTE, false, 8, vertexOffet + 3)
     gl.enableVertexAttribArray(1)
@@ -25,8 +25,8 @@ export class Cube {
   }
 
   static draw(gl) {
-		gl.bindVertexArray(this.vao)
-		gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_BYTE, this.elementOffset)
+    gl.bindVertexArray(this.vao)
+    gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_BYTE, this.elementOffset)
   }
 
   static drawOutlines(gl) {
