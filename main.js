@@ -19,10 +19,9 @@ uniform highp vec2 inverse_screen_size;
 uniform highp float time;
 uniform sampler2D screen;
 
-void main()
-{
+void main() {
   gl_Position = vec4(a0, 0.0, 1.0);
-  p = (a0.xy * 0.5 + 0.5 ) * vec2(textureSize(screen, 0)) / screen_size;
+  p = (a0.xy * 0.5 + 0.5 ) * screen_size / vec2(textureSize(screen, 0));
 }`,
 
     particleBasic:
@@ -34,8 +33,7 @@ flat out int id;
 uniform highp mat4 mvp;
 //in highp int gl_VertexID;
 
-void main()
-{
+void main() {
   gl_Position = mvp * vec4(position, 1.0);
   point_size = gl_Position.w * 1.25;//32.0 / (position.z * 0.5 + 0.5 + 1.0);
   gl_PointSize = point_size;
@@ -51,8 +49,7 @@ layout(location = 2) in highp vec2 uv;
 out highp vec3 n;
 uniform highp mat4 mvp, mv;
 
-void main()
-{
+void main() {
   gl_Position = mvp * vec4(position, 1.0);
   n = (mv * vec4(normal, 0.0)).xyz;
 }`,
@@ -63,8 +60,7 @@ layout(location = 0) in highp vec3 position;
 out highp vec3 pos;
 uniform highp mat4 mvp, mv;
 
-void main()
-{
+void main() {
   pos = 6.0 * vec3(position.y, 0.05 * sin(position.x * 50.0) + 0.05 * cos(position.y * 50.0), position.x);
   gl_Position = mvp * vec4(pos, 1.0);
 }`
@@ -82,8 +78,7 @@ uniform highp float time;
 uniform sampler2D screen;
 in vec2 p;
 
-void main()
-{
+void main() {
   frag_color = texture(screen, p);
 }`,
 
@@ -99,8 +94,9 @@ vec3 palette(in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d){return a + 
 
 void main() {
   highp float alpha = 0.5 * clamp(min(1.0, point_size * 0.5 - length(gl_PointCoord * point_size - point_size * 0.5)), 0.0, 1.0);
-  if (alpha <= 0.0)
+  if (alpha <= 0.0) {
     discard;
+  }
   vec3 col = vec3(1.0) - palette(float(id) / 50000.0, vec3(${Math.random()}, ${Math.random()}, ${Math.random()}),
     vec3(${Math.random()},${Math.random()},${Math.random()}),
     vec3(${Math.random()},${Math.random()},${Math.random()}),
