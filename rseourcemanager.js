@@ -14,7 +14,7 @@ export class ResourceManager {
    */
   register(key, loadPromise, initFn = null) {
     if (this.initialized) {
-      throw new Error('Cannot register resources after initialization');
+      throw new Error('Cannot register resources after initialization')
     }
 
     const resourceEntry = {
@@ -36,7 +36,7 @@ export class ResourceManager {
       .catch(error => {
         resourceEntry.error = error
         throw error
-      });
+      })
 
     this.loadPromises.push(wrappedPromise)
   }
@@ -68,7 +68,7 @@ export class ResourceManager {
         await callback(this)
       }
 
-      return this;
+      return this
     } catch (error) {
       console.error('Resource initialization failed:', error)
       throw error
@@ -94,7 +94,10 @@ export class ResourceManager {
    */
   get(key) {
     const entry = this.resources.get(key)
-    if (!entry) return null;
+    if (!entry) {
+      return null
+    }
+
     return entry.value
   }
 

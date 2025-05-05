@@ -8,12 +8,12 @@ export class TessPlane {
     console.log(t)
 
     this.vao = gl.createVertexArray()
-		gl.bindVertexArray(this.vao)
+    gl.bindVertexArray(this.vao)
 
     const vertexOffet = StaticGeometry.addVertices(gl, new Float32Array(t[0]))
     this.elementOffset = StaticGeometry.addElements(gl, new Uint16Array(t[1]))
 
-		gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8, vertexOffet)
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8, vertexOffet)
     gl.enableVertexAttribArray(0)
   }
 
@@ -32,7 +32,7 @@ export class TessPlane {
       const n_vertices = line + 1
 
       for (let i = 0; i < n_vertices; ++i) {
-        const x = n_vertices == 1 ? 0.0 : i / (n_vertices - 1) * line_edge * (n_vertices - 1) - 0.5 * line_edge * (n_vertices - 1)
+        const x = n_vertices === 1 ? 0.0 : i / (n_vertices - 1) * line_edge * (n_vertices - 1) - 0.5 * line_edge * (n_vertices - 1)
         vertexBuffer.push(x, y)
       }
     }
@@ -62,7 +62,7 @@ export class TessPlane {
   }
 
   draw(gl) {
-		gl.bindVertexArray(this.vao)
-		gl.drawElements(gl.TRIANGLES, this.count, gl.UNSIGNED_SHORT, this.elementOffset)
+    gl.bindVertexArray(this.vao)
+    gl.drawElements(gl.TRIANGLES, this.count, gl.UNSIGNED_SHORT, this.elementOffset)
   }
 }

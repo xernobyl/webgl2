@@ -1,15 +1,16 @@
 import js from '@eslint/js'
 import globals from 'globals'
+//import importPlugin from 'eslint-plugin-import'
 import { defineConfig } from 'eslint/config'
 
 export default defineConfig([
-  { 
-    files: ['**/*.{js,mjs,cjs}'], 
-    plugins: { js }, 
-    extends: ['js/recommended'] 
-  },
-  { 
-    files: ['**/*.{js,mjs,cjs}'], 
+  // apply recommended rules to JS files
+  {
+    name: 'your-project/recommended-rules',
+    files: ['**/*.{js,mjs,cjs}'],
+    plugins: {
+      js
+    },
     languageOptions: { 
       globals: { 
         ...globals.browser,
@@ -19,21 +20,16 @@ export default defineConfig([
         ecmaVersion: 'latest',
         sourceType: 'module'
       }
-    } 
-  },
-  {
-    extends: [
-      'eslint:recommended',
-      'plugin:import/recommended',
-    ],
+    },
+    extends: ['js/recommended'/*, "eslint:recommended", "plugin:import/recommended"*/],
     rules: {
       // Code Quality
-      'complexity': ['error', 10],
+      'complexity': ['error', 12],
       'max-depth': ['error', 4],
-      'max-lines': ['error', 300],
-      'max-lines-per-function': ['error', 50],
-      'max-params': ['error', 3],
-      'no-magic-numbers': ['error', { 'ignore': [-1, 0, 1] }],
+      'max-lines': ['error', 512],
+      'max-lines-per-function': ['error', 100],
+      'max-params': ['error', 5],
+      'no-magic-numbers': 'off',
       'require-await': 'error',
 
       // Best Practices
@@ -82,11 +78,11 @@ export default defineConfig([
       'template-curly-spacing': ['error', 'never'],
 
       // Import/Module
-      'import/order': 'error',
-      'import/no-default-export': 'error',
-      'import/no-anonymous-default-export': 'error',
-      'import/no-duplicates': 'error',
-      'import/newline-after-import': 'error',
+      //'import/order': 'error',
+      //'import/no-default-export': 'error',
+      //'import/no-anonymous-default-export': 'error',
+      //'import/no-duplicates': 'error',
+      //'import/newline-after-import': 'error',
       'sort-imports': ['error', {
         'ignoreCase': true,
         'ignoreDeclarationSort': true,

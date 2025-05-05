@@ -6,7 +6,7 @@ import { Cube } from './cube.js'
 import { TessPlane } from './tessplane.js'
 import { Particles } from './particles.js'
 
-import { linkProgram, compileShader } from './shaders.js'
+import { compileShader, linkProgram } from './shaders.js'
 
 const shaderSource = {
   vertex: {
@@ -14,11 +14,15 @@ const shaderSource = {
 `#version 300 es
 layout(location = 0) in vec2 a0;
 out vec2 p;
+uniform highp vec2 screen_size;
+uniform highp vec2 inverse_screen_size;
+uniform highp float time;
+uniform sampler2D screen;
 
 void main()
 {
   gl_Position = vec4(a0, 0.0, 1.0);
-  p = a0.xy * 0.5 + 0.5;
+  p = (a0.xy * 0.5 + 0.5 ) * vec2(textureSize(screen, 0)) / screen_size;
 }`,
 
     particleBasic:
@@ -63,7 +67,7 @@ void main()
 {
   pos = 6.0 * vec3(position.y, 0.05 * sin(position.x * 50.0) + 0.05 * cos(position.y * 50.0), position.x);
   gl_Position = mvp * vec4(pos, 1.0);
-}`,
+}`
   },
 
   fragment: {
@@ -93,12 +97,14 @@ flat in int id;
 
 vec3 palette(in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d){return a + b * cos(6.283185307179586 * (c * t + d));}
 
-void main()
-{
+void main() {
   highp float alpha = 0.5 * clamp(min(1.0, point_size * 0.5 - length(gl_PointCoord * point_size - point_size * 0.5)), 0.0, 1.0);
   if (alpha <= 0.0)
     discard;
-  vec3 col = vec3(1.0) - palette(float(id) / 50000.0, vec3(` + Math.random() + `, ` + Math.random() + `, ` + Math.random() + `), vec3(` + Math.random() + `,` + Math.random() + `,` + Math.random() + `), vec3(` + Math.random() + `,` + Math.random() + `,` + Math.random() + `), vec3(` + Math.random() + `,` + Math.random() + `,` + Math.random() + `));
+  vec3 col = vec3(1.0) - palette(float(id) / 50000.0, vec3(${Math.random()}, ${Math.random()}, ${Math.random()}),
+    vec3(${Math.random()},${Math.random()},${Math.random()}),
+    vec3(${Math.random()},${Math.random()},${Math.random()}),
+    vec3(${Math.random()},${Math.random()},${Math.random()}));
   frag_color = vec4(col * alpha, alpha);
 }`,
 
@@ -168,7 +174,7 @@ vec3 sRGBToLinear(vec3 c)
   }
 }
 
-let shaderPrograms = {
+const shaderPrograms = {
   test: {
     'fragment': ['test'],
     'vertex': ['test'],
@@ -193,7 +199,7 @@ let shaderPrograms = {
     'vertex': ['flat'],
     'uniforms': {
       'mvp': null,
-      'mv': null,
+      'mv': null
     }
   },
 
@@ -203,7 +209,7 @@ let shaderPrograms = {
     'uniforms': {
       'mvp': null,
       'mv': null,
-      'color': null,
+      'color': null
     }
   },
 
@@ -213,9 +219,9 @@ let shaderPrograms = {
     'uniforms': {
       'mvp': null,
       'mv': null,
-      'color': null,
+      'color': null
     }
-  },
+  }
 
   /*'flow0': {
     'vertex': ['flow0'],
@@ -233,6 +239,7 @@ let frame = 0
 let time = 0.0        // milliseconds
 let timeOffset = 0.0  // milliseconds
 
+/*
 const pointLights = []
 
 function createLightClusters(camera) {
@@ -244,12 +251,13 @@ function createLightClusters(camera) {
     let r = pointLights[i].color.max()
   }
 }
+*/
 
 let particles = null
 let plane = null
 
 function load() {
-  const compiledShader = { vertex: {}, fragment: {}}
+  const compiledShader = { vertex: {}, fragment: {} }
 
   for (const shaderType in shaderSource) {
     for (const name in shaderSource[shaderType]) {
@@ -258,7 +266,7 @@ function load() {
   }
 
   for (const program in shaderPrograms) {
-    let shaders = []
+    const shaders = []
     for (const shaderType in shaderSource) {
       for (const shader in shaderPrograms[program][shaderType]) {
         shaders.push(compiledShader[shaderType][shaderPrograms[program][shaderType][shader]])
@@ -280,36 +288,42 @@ function load() {
   plane = new TessPlane(gl, 9)
   particles = new Particles(gl, 50000)
 
+  /*
   for (let i = 0; i < 4096; ++i) {
     pointLights.push({
       position: vec3.fromValues(Math.random() * 100.0 - 50.0, Math.random() * 50.0, Math.random() * 100.0 - 50.0),
       color: vec3.fromValues(Math.random() * 10.0, Math.random() * 10.0, Math.random() * 10.0)
     })
   }
+  */
 
   return true
 }
 
-let camera = new Camera(Math.PI / 2.0, 1.0, 0.1, 100.0)
+const camera = new Camera(Math.PI / 2.0, 1.0, 0.1, 100.0)
 
 function renderLoop(frameTime) {
-  if (frame == 0) {
+  if (frame === 0) {
     timeOffset = frameTime
   }
 
-  let dt = (frameTime - time)
+  // const oldTime = time
   time = frameTime - timeOffset
+  // const dt = (frameTime - oldTime)
 
   //
 
   camera.aspect = canvas.offsetWidth / canvas.offsetHeight
   //camera.focalLength = 8.0
   camera.updateProjection()
-  camera.lookAt(vec3.fromValues(Math.cos(time / 1000.0 * 0.1) * 5.0, 2.5, Math.sin(time / 1000.0 * 0.1) * 5.0), vec3.fromValues(0.0, 0.0, 0.0), vec3.fromValues(0.0, 1.0, 0.0))
+  camera.lookAt(
+    vec3.fromValues(Math.cos(time / 1000.0 * 0.1) * 2.5, 1.25, Math.sin(time / 1000.0 * 0.1) * 2.5),
+    vec3.fromValues(0.0, 0.0, 0.0), vec3.fromValues(0.0, 1.0, 0.0)
+  )
   //camera.lookAt(vec3.fromValues(0.0, 0.0, -5.0), vec3.fromValues(0.0, 0.0, 0.0), vec3.fromValues(0.0, 1.0, 0.0))
   camera.update()
 
-  Framebuffer.bind(gl)
+  Framebuffer.bind(gl, canvas.width, canvas.height)
   gl.clearColor(1.0, 1.0, 1.0, 0.0)
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
@@ -324,17 +338,19 @@ function renderLoop(frameTime) {
   gl.useProgram(shaderPrograms['color'].program)
   gl.uniformMatrix4fv(shaderPrograms['color'].uniforms['mvp'], false, camera.mvp)
   gl.uniformMatrix4fv(shaderPrograms['color'].uniforms['mv'], false, camera.view)
-  gl.uniform4f(shaderPrograms['color'].uniforms['color'], 0.0, 0.0, 0.0, 0.0);
+  gl.uniform4f(shaderPrograms['color'].uniforms['color'], 0.0, 0.0, 0.0, 0.0)
   Cube.drawOutlines(gl)
   gl.disable(gl.DEPTH_TEST)
 
-  /*gl.enable(gl.BLEND)
+  gl.disable(gl.SCISSOR_TEST)
+
+  gl.enable(gl.BLEND)
   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
   // gl.blendFunc(gl.ONE, gl.ONE)
   gl.useProgram(shaderPrograms['particles0'].program)
   gl.uniformMatrix4fv(shaderPrograms['particles0'].uniforms['mvp'], false, camera.mvp)
-  particles.draw()
-  gl.disable(gl.BLEND)*/
+  particles.draw(gl)
+  gl.disable(gl.BLEND)
 
   //
 
@@ -387,8 +403,8 @@ addEventListener('load', () => {
     height: '100%'
   })
 
-  gl = canvas.getContext('webgl2', {alpha: false, depth: false, stencil: false, antialias: false})
-  if (gl == null) {
+  gl = canvas.getContext('webgl2', { alpha: false, depth: false, stencil: false, antialias: false })
+  if (gl === null) {
     alert('WebGL 2.0 not supported apparently. Weird.\n')
     return
   }

@@ -13,7 +13,7 @@ export class Cube {
     this.vao = gl.createVertexArray()
     gl.bindVertexArray(this.vao)
 
-    let vertexOffet = StaticGeometry.addVertices(gl, vertexBuffer)
+    const vertexOffet = StaticGeometry.addVertices(gl, vertexBuffer)
     this.elementOffset = StaticGeometry.addElements(gl, indicesBuffer)
 
     gl.vertexAttribPointer(0, 3, gl.BYTE, false, 8, vertexOffet + 0)
