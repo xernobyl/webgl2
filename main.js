@@ -5,6 +5,7 @@ import { Quad } from './quad.js'
 import { Cube } from './cube.js'
 import { TessPlane } from './tessplane.js'
 import { Particles } from './particles.js'
+import { MIDIManager } from './midi.js'
 
 import { compileShader, linkProgram } from './shaders.js'
 
@@ -59,9 +60,10 @@ void main() {
 layout(location = 0) in highp vec3 position;
 out highp vec3 pos;
 uniform highp mat4 mvp, mv;
+uniform highp vec2 bias;
 
 void main() {
-  pos = 6.0 * vec3(position.y, 0.05 * sin(position.x * 50.0) + 0.05 * cos(position.y * 50.0), position.x);
+  pos = 6.0 * vec3(position.y, 0.1 * bias.y * sin(position.x * 50.0 + 6.283185307179586476925286766559 * bias.x) + 0.1 * bias.y * cos(position.y * 50.0 + 6.283185307179586476925286766559 * bias.y), position.x);
   gl_Position = mvp * vec4(pos, 1.0);
 }`
   },
@@ -111,8 +113,7 @@ precision highp int;
 precision highp float;
 in vec3 n;
 
-void main()
-{
+void main() {
   frag_color = vec4(normalize(n) * 0.5 + 0.5, 0.0);
 }`,
 
@@ -124,8 +125,7 @@ precision highp float;
 in vec3 n;
 uniform vec4 color;
 
-void main()
-{
+void main() {
   frag_color = color;
 }`,
 
@@ -138,8 +138,7 @@ in vec3 pos;
 
 const float PI = 3.1415926535897932384626433832795;
 
-void main()
-{
+void main() {
   if (pos.x > 1.0 || pos.y > 1.0 || pos.z > 1.0 || pos.x < -1.0 || pos.y < -1.0 || pos.z < -1.0)
     discard;
 
@@ -152,16 +151,14 @@ void main()
     colorSpace:
 `#version 300 es
 precision highp float;
-vec3 LinearTosRGB(vec3 c)
-{
+vec3 LinearTosRGB(vec3 c) {
   return vec3(
     c.r <= 0.0031308 ? 12.92 * c.r : 1.055 * pow(c.r, 1.0 / 2.4) - 0.055,
     c.g <= 0.0031308 ? 12.92 * c.g : 1.055 * pow(c.g, 1.0 / 2.4) - 0.055,
     c.b <= 0.0031308 ? 12.92 * c.b : 1.055 * pow(c.b, 1.0 / 2.4) - 0.055);
 }
 
-vec3 sRGBToLinear(vec3 c)
-{
+vec3 sRGBToLinear(vec3 c) {
   return vec3(
     c.r <= 0.04045 ? c.r / 12.92 : pow(c.r / 1.055 + 0.055 / 1.055, 2.4),
     c.g <= 0.04045 ? c.g / 12.92 : pow(c.g / 1.055 + 0.055 / 1.055, 2.4),
@@ -215,7 +212,8 @@ const shaderPrograms = {
     'uniforms': {
       'mvp': null,
       'mv': null,
-      'color': null
+      'color': null,
+      'bias': null
     }
   }
 
@@ -328,6 +326,7 @@ function renderLoop(frameTime) {
   gl.useProgram(shaderPrograms['plane'].program)
   gl.uniformMatrix4fv(shaderPrograms['plane'].uniforms['mvp'], false, camera.mvp)
   gl.uniformMatrix4fv(shaderPrograms['plane'].uniforms['mv'], false, camera.view)
+  gl.uniform2f(shaderPrograms['plane'].uniforms['bias'], MIDIManager.getSliderValue(1), MIDIManager.getSliderValue(2))
   plane.draw(gl)
   gl.disable(gl.CULL_FACE)
 
@@ -426,3 +425,5 @@ addEventListener('load', () => {
 
   requestAnimationFrame(renderLoop)
 })
+
+await MIDIManager.initialize()
