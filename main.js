@@ -8,162 +8,21 @@ import { Particles } from './particles.js'
 import { MIDIManager } from './midi.js'
 
 import { compileShader, linkProgram } from './shaders.js'
+import { ResourceManager } from './resourcemanager.js'
 
 const shaderSource = {
   vertex: {
-    test:
-`#version 300 es
-layout(location = 0) in vec2 a0;
-out vec2 p;
-uniform highp vec2 screen_size;
-uniform highp vec2 inverse_screen_size;
-uniform highp float time;
-uniform sampler2D screen;
-
-void main() {
-  gl_Position = vec4(a0, 0.0, 1.0);
-  p = (a0.xy * 0.5 + 0.5 ) * screen_size / vec2(textureSize(screen, 0));
-}`,
-
-    particleBasic:
-`#version 300 es
-layout(location = 0) in highp vec3 position;
-layout(location = 1) in highp vec3 velocity;
-out highp float point_size;
-flat out int id;
-uniform highp mat4 mvp;
-//in highp int gl_VertexID;
-
-void main() {
-  gl_Position = mvp * vec4(position, 1.0);
-  point_size = gl_Position.w * 1.25;//32.0 / (position.z * 0.5 + 0.5 + 1.0);
-  gl_PointSize = point_size;
-  id = int(position.x * position.y * position.z * 12345934.0);//gl_VertexID
-  //id = gl_VertexID;
-}`,
-
-    flat:
-`#version 300 es
-layout(location = 0) in highp vec3 position;
-layout(location = 1) in highp vec3 normal;
-layout(location = 2) in highp vec2 uv;
-out highp vec3 n;
-uniform highp mat4 mvp, mv;
-
-void main() {
-  gl_Position = mvp * vec4(position, 1.0);
-  n = (mv * vec4(normal, 0.0)).xyz;
-}`,
-
-    plane:
-`#version 300 es
-layout(location = 0) in highp vec3 position;
-out highp vec3 pos;
-uniform highp mat4 mvp, mv;
-uniform highp vec2 bias;
-
-void main() {
-  pos = 6.0 * vec3(position.y, 0.1 * bias.y * sin(position.x * 50.0 + 6.283185307179586476925286766559 * bias.x) + 0.1 * bias.y * cos(position.y * 50.0 + 6.283185307179586476925286766559 * bias.y), position.x);
-  gl_Position = mvp * vec4(pos, 1.0);
-}`
+    test: 'test.vs.glsl',
+    particleBasic: 'particleBasic.vs.glsl',
+    flat: 'flat.vs.glsl',
+    plane: 'plane.vs.glsl'
   },
-
   fragment: {
-    test:
-`#version 300 es
-precision highp int;
-precision highp float;
-layout(location = 0) out lowp vec4 frag_color;
-uniform highp vec2 screen_size;
-uniform highp vec2 inverse_screen_size;
-uniform highp float time;
-uniform sampler2D screen;
-in vec2 p;
-
-void main() {
-  frag_color = texture(screen, p);
-}`,
-
-    particleFlat:
-`#version 300 es
-precision highp int;
-precision highp float;
-layout(location = 0) out lowp vec4 frag_color;
-in highp float point_size;
-flat in int id;
-
-vec3 palette(in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d){return a + b * cos(6.283185307179586 * (c * t + d));}
-
-void main() {
-  highp float alpha = 0.5 * clamp(min(1.0, point_size * 0.5 - length(gl_PointCoord * point_size - point_size * 0.5)), 0.0, 1.0);
-  if (alpha <= 0.0) {
-    discard;
-  }
-  vec3 col = vec3(1.0) - palette(float(id) / 50000.0, vec3(${Math.random()}, ${Math.random()}, ${Math.random()}),
-    vec3(${Math.random()},${Math.random()},${Math.random()}),
-    vec3(${Math.random()},${Math.random()},${Math.random()}),
-    vec3(${Math.random()},${Math.random()},${Math.random()}));
-  frag_color = vec4(col * alpha, alpha);
-}`,
-
-    flat:
-`#version 300 es
-layout(location = 0) out lowp vec4 frag_color;
-precision highp int;
-precision highp float;
-in vec3 n;
-
-void main() {
-  frag_color = vec4(normalize(n) * 0.5 + 0.5, 0.0);
-}`,
-
-    color:
-`#version 300 es
-layout(location = 0) out lowp vec4 frag_color;
-precision highp int;
-precision highp float;
-in vec3 n;
-uniform vec4 color;
-
-void main() {
-  frag_color = color;
-}`,
-
-    plane:
-`#version 300 es
-layout(location = 0) out lowp vec4 frag_color;
-precision highp int;
-precision highp float;
-in vec3 pos;
-
-const float PI = 3.1415926535897932384626433832795;
-
-void main() {
-  if (pos.x > 1.0 || pos.y > 1.0 || pos.z > 1.0 || pos.x < -1.0 || pos.y < -1.0 || pos.z < -1.0)
-    discard;
-
-  vec2 t = vec2(cos(pos.z * 50.0 / PI / 2.0), -sin(pos.x * 50.0 / PI / 2.0));
-    vec3 n = normalize(vec3(t.x, 1.0 - dot(t, t), t.y));
-
-    frag_color = vec4(clamp(dot(n, vec3(0.0, 1.0, 0.0)) * vec3(1.0, 0.5, 0.125), vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0)) + vec3(0.125, 0.125, 0.25), 0.0);
-}`,
-
-    colorSpace:
-`#version 300 es
-precision highp float;
-vec3 LinearTosRGB(vec3 c) {
-  return vec3(
-    c.r <= 0.0031308 ? 12.92 * c.r : 1.055 * pow(c.r, 1.0 / 2.4) - 0.055,
-    c.g <= 0.0031308 ? 12.92 * c.g : 1.055 * pow(c.g, 1.0 / 2.4) - 0.055,
-    c.b <= 0.0031308 ? 12.92 * c.b : 1.055 * pow(c.b, 1.0 / 2.4) - 0.055);
-}
-
-vec3 sRGBToLinear(vec3 c) {
-  return vec3(
-    c.r <= 0.04045 ? c.r / 12.92 : pow(c.r / 1.055 + 0.055 / 1.055, 2.4),
-    c.g <= 0.04045 ? c.g / 12.92 : pow(c.g / 1.055 + 0.055 / 1.055, 2.4),
-    c.b <= 0.04045 ? c.b / 12.92 : pow(c.b / 1.055 + 0.055 / 1.055, 2.4));
-}`
+    test: 'test.fs.glsl',
+    particleFlat: 'particleFlat.fs.glsl',
+    flat: 'flat.fs.glsl',
+    color: 'color.fs.glsl',
+    plane: 'plane.fs.glsl'
   }
 }
 
@@ -255,7 +114,8 @@ function load() {
 
   for (const shaderType in shaderSource) {
     for (const name in shaderSource[shaderType]) {
-      compiledShader[shaderType][name] = compileShader(gl, shaderSource[shaderType][name], shaderType)
+      const source = ResourceManager.get(`${shaderType}_${name}`)
+      compiledShader[shaderType][name] = compileShader(gl, source, shaderType)
     }
   }
 
@@ -381,49 +241,67 @@ function resize() {
 }
 
 addEventListener('load', () => {
-  canvas = document.createElement('canvas')
+  console.info('Load...')
 
-  Object.assign(document.body.style, {
-    margin: '0',
-    padding: '0',
-    overflow: 'hidden',
-    position: 'fixed',
-    width: '100vw',
-    height: '100vh'
-  })
+  ResourceManager.add('vertex_test', 'shaders/test.vs.glsl')
+  ResourceManager.add('vertex_particleBasic', 'shaders/particleBasic.vs.glsl')
+  ResourceManager.add('vertex_flat', 'shaders/flat.vs.glsl')
+  ResourceManager.add('vertex_plane', 'shaders/plane.vs.glsl')
+  ResourceManager.add('fragment_test', 'shaders/test.fs.glsl')
+  ResourceManager.add('fragment_particleFlat', 'shaders/particleFlat.fs.glsl')
+  ResourceManager.add('fragment_flat', 'shaders/flat.fs.glsl')
+  ResourceManager.add('fragment_color', 'shaders/color.fs.glsl')
+  ResourceManager.add('fragment_plane', 'shaders/plane.fs.glsl')
+  //ResourceManager.add('fragment_colorSpace', 'shaders/colorSpace.fs.glsl')
   
-  Object.assign(canvas.style, {
-    display: 'block',
-    width: '100%',
-    height: '100%'
-  })
+  ResourceManager.onAllLoaded(() => {
+    console.info('Creating canvas...')
+    canvas = document.createElement('canvas')
 
-  gl = canvas.getContext('webgl2', { alpha: false, depth: false, stencil: false, antialias: false })
-  if (gl === null) {
-    alert('WebGL 2.0 not supported apparently. Weird.\n')
-    return
-  }
+    Object.assign(document.body.style, {
+      margin: '0',
+      padding: '0',
+      overflow: 'hidden',
+      position: 'fixed',
+      width: '100vw',
+      height: '100vh'
+    })
+    
+    Object.assign(canvas.style, {
+      display: 'block',
+      width: '100%',
+      height: '100%'
+    })
 
-  const ext = gl.getExtension('EXT_color_buffer_float')
-  if (!ext) {
-    console.error('Floating-point rendering not supported! We kind of want that.')
-    return
-  }
+    console.info('Getting context...')
+    gl = canvas.getContext('webgl2', { alpha: false, depth: false, stencil: false, antialias: false })
+    if (gl === null) {
+      alert('WebGL 2.0 not supported apparently. Weird.\n')
+      return
+    }
 
-  console.log(gl.getSupportedExtensions())
+    const ext = gl.getExtension('EXT_color_buffer_float')
+    if (!ext) {
+      console.error('Floating-point rendering not supported! We kind of want that.')
+      return
+    }
 
-  resize()
-  addEventListener('resize', resize)
+    console.log(gl.getSupportedExtensions())
 
-  document.body.appendChild(canvas)
+    console.info('Compiling shaders...')
+    if (!load()) {
+      alert('Loading failed.\n' +
+        'This shouldn\'t happen. It\'s probably a bug.')
+      return
+    }
 
-  if (!load()) {
-    alert('Loading failed.\n' +
-      'This shouldn\'t happen. It\'s probably a bug.')
-    return
-  }
+    resize()
+    addEventListener('resize', resize)
 
-  requestAnimationFrame(renderLoop)
+    document.body.appendChild(canvas)
+
+    requestAnimationFrame(renderLoop)
+  })  
 })
 
 await MIDIManager.initialize()

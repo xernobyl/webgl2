@@ -37,6 +37,7 @@ export function compileShader(gl, shaderSource, shaderType) {
 
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     console.log(gl.getShaderInfoLog(shader))
+    console.log(shaderSource)
     gl.deleteShader(shader)
     return null
   }

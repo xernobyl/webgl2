@@ -94,35 +94,37 @@ export class Framebuffer {
     gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, this.framebuffer)
     gl.framebufferTexture2D(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.textureHdr, 0)
     gl.framebufferTexture2D(gl.DRAW_FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, this.textureDepth, 0)
-    //gl.drawBuffers([gl.COLOR_ATTACHMENT0])
     if (!this.checkFramebufferStatus(gl)) {
       return false
     }
+    gl.drawBuffers([gl.COLOR_ATTACHMENT0])
 
     gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, this.framebufferHalf)
     gl.framebufferTexture2D(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.textureHDRHalf, 0)
     if (!this.checkFramebufferStatus(gl)) {
       return false
     }
+    gl.drawBuffers([gl.COLOR_ATTACHMENT0])
 
     gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, this.framebufferQuarter)
     gl.framebufferTexture2D(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.textureHDRQuarter, 0)
     if (!this.checkFramebufferStatus(gl)) {
       return false
     }
+    gl.drawBuffers([gl.COLOR_ATTACHMENT0])
 
     gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, this.framebufferEighth)
     gl.framebufferTexture2D(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.textureHDREighth, 0)
     if (!this.checkFramebufferStatus(gl)) {
       return false
     }
+    gl.drawBuffers([gl.COLOR_ATTACHMENT0])
 
     return true
   }
 
   static bind(gl, width, height) {
     gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, this.framebuffer)
-    gl.drawBuffers([gl.COLOR_ATTACHMENT0])	// needed?
     gl.viewport(0, 0, width, height)
     gl.scissor(0, 0, width, height)
     gl.enable(gl.SCISSOR_TEST)
