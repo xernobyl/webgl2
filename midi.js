@@ -26,8 +26,8 @@ export class MIDIManager {
 
     try {
       this.midiAccess = await navigator.requestMIDIAccess({ sysex: false })
-      this.setupEventListeners()
-      this.updateDeviceLists()
+      this.#setupEventListeners()
+      this.#updateDeviceLists()
       console.log('MIDI initialized successfully')
       return true
     } catch (error) {
@@ -48,11 +48,7 @@ export class MIDIManager {
     return this.encoderState.get(encoder) || 0
   }
 
-  // =====================
-  // Private Methods
-  // =====================
-
-  static setupEventListeners() {
+  static #setupEventListeners() {
     if (!this.midiAccess) {
       return
     }
@@ -60,7 +56,7 @@ export class MIDIManager {
     // Handle device connection/disconnection
     this.midiAccess.onstatechange = event => {
       console.log(`Device ${event.port.name} ${event.port.state}`)
-      this.updateDeviceLists()
+      this.#updateDeviceLists()
       
       if (event.port.state === 'connected' && event.port.type === 'input') {
         event.port.onmidimessage = msg => this.handleMessage(msg)
@@ -68,7 +64,7 @@ export class MIDIManager {
     }
   }
 
-  static updateDeviceLists() {
+  static #updateDeviceLists() {
     this.inputs.clear()
     this.outputs.clear()
 
@@ -76,7 +72,7 @@ export class MIDIManager {
       // Update inputs
       this.midiAccess.inputs.forEach(input => {
         this.inputs.set(input.id, input)
-        input.onmidimessage = msg => this.handleMessage(msg)
+        input.onmidimessage = msg => this.#handleMessage(msg)
       })
 
       // Update outputs
@@ -86,7 +82,7 @@ export class MIDIManager {
     }
   }
 
-  static handleMessage(message) {
+  static #handleMessage(message) {
     const [command, data1, data2] = message.data
     const commandType = command & 0xf0
     const channel = (command & 0x0f) + 1

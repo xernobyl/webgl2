@@ -1,24 +1,26 @@
+import { GL } from './gl.js'
+
 import { StaticGeometry } from './staticgeometry.js'
 
 export class Quad {
-	static init(gl) {
-		const fullScreenTriangle = [
-			0, 127,
-			-127, -2,
-			127, -2
-		]
+  static #vao
+  
+  static init() {
+    const fullScreenTriangle = [
+      0, 127,
+      -127, -2,
+      127, -2
+    ]
 
-		this.vao = gl.createVertexArray()
-		gl.bindVertexArray(this.vao)
+    Quad.#vao = GL.gl.createVertexArray()
+    GL.gl.bindVertexArray(Quad.#vao)
+    const offset = StaticGeometry.addVertices(GL.gl, new Int8Array(fullScreenTriangle))
+    GL.gl.vertexAttribPointer(0, 2, GL.gl.BYTE, false, 0, offset)
+    GL.gl.enableVertexAttribArray(0)
+  }
 
-		let offset = StaticGeometry.addVertices(gl, new Int8Array(fullScreenTriangle))
-
-		gl.vertexAttribPointer(0, 2, gl.BYTE, false, 0, offset)
-		gl.enableVertexAttribArray(0)
-	}
-
-	static draw(gl) {
-		gl.bindVertexArray(this.vao)
-		gl.drawArrays(gl.TRIANGLES, 0, 3)
-	}
+  static draw() {
+    GL.gl.bindVertexArray(Quad.#vao)
+    GL.gl.drawArrays(GL.gl.TRIANGLES, 0, 3)
+  }
 }

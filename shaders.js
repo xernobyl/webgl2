@@ -1,44 +1,46 @@
-export function linkProgram(gl, shaders, varyings) {
-  const program = gl.createProgram()
+import { GL } from './gl.js'
+
+export function linkProgram(shaders, varyings) {
+  const program = GL.gl.createProgram()
   for (const shader in shaders) {
     if (!shaders[shader]) {
       console.log(shader)
     }
     else {
-      gl.attachShader(program, shaders[shader])
+      GL.gl.attachShader(program, shaders[shader])
     }
   }
 
   if (varyings !== undefined) {
-    gl.transformFeedbackVaryings(program, varyings, gl.INTERLEAVED_ATTRIBS)
+    GL.gl.transformFeedbackVaryings(program, varyings, GL.gl.INTERLEAVED_ATTRIBS)
   }
 
-  gl.linkProgram(program)
+  GL.gl.linkProgram(program)
 
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    console.log(gl.getProgramInfoLog(program))
-    gl.deleteProgram(program)
+  if (!GL.gl.getProgramParameter(program, GL.gl.LINK_STATUS)) {
+    console.log(GL.gl.getProgramInfoLog(program))
+    GL.gl.deleteProgram(program)
     return null
   }
 
   return program
 }
 
-export function compileShader(gl, shaderSource, shaderType) {
+export function compileShader(shaderSource, shaderType) {
   if (shaderType === 'vertex') {
-    shaderType = gl.VERTEX_SHADER
+    shaderType = GL.gl.VERTEX_SHADER
   } else if (shaderType === 'fragment') {
-    shaderType = gl.FRAGMENT_SHADER
+    shaderType = GL.gl.FRAGMENT_SHADER
   }
 
-  const shader = gl.createShader(shaderType)
-  gl.shaderSource(shader, shaderSource)
-  gl.compileShader(shader)
+  const shader = GL.gl.createShader(shaderType)
+  GL.gl.shaderSource(shader, shaderSource)
+  GL.gl.compileShader(shader)
 
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.log(gl.getShaderInfoLog(shader))
+  if (!GL.gl.getShaderParameter(shader, GL.gl.COMPILE_STATUS)) {
+    console.log(GL.gl.getShaderInfoLog(shader))
     console.log(shaderSource)
-    gl.deleteShader(shader)
+    GL.gl.deleteShader(shader)
     return null
   }
 

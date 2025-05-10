@@ -6,9 +6,9 @@ import { Cube } from './cube.js'
 import { TessPlane } from './tessplane.js'
 import { Particles } from './particles.js'
 import { MIDIManager } from './midi.js'
-
 import { compileShader, linkProgram } from './shaders.js'
 import { ResourceManager } from './resourcemanager.js'
+import { GL } from './gl.js'
 
 const shaderSource = {
   vertex: {
@@ -86,12 +86,6 @@ const shaderPrograms = {
   }*/
 }
 
-let canvas = null
-let gl = null
-let frame = 0
-let time = 0.0        // milliseconds
-let timeOffset = 0.0  // milliseconds
-
 /*
 const pointLights = []
 
@@ -109,13 +103,13 @@ function createLightClusters(camera) {
 let particles = null
 let plane = null
 
-function load() {
+const load = () => {
   const compiledShader = { vertex: {}, fragment: {} }
 
   for (const shaderType in shaderSource) {
     for (const name in shaderSource[shaderType]) {
       const source = ResourceManager.get(`${shaderType}_${name}`)
-      compiledShader[shaderType][name] = compileShader(gl, source, shaderType)
+      compiledShader[shaderType][name] = compileShader(source, shaderType)
     }
   }
 
@@ -127,20 +121,20 @@ function load() {
       }
     }
 
-    shaderPrograms[program].program = linkProgram(gl, shaders, program.varyings)
+    shaderPrograms[program].program = linkProgram(shaders, program.varyings)
     if (!shaderPrograms[program].program) {
       return false
     }
 
     for (const uniform in shaderPrograms[program].uniforms) {
-      shaderPrograms[program].uniforms[uniform] = gl.getUniformLocation(shaderPrograms[program].program, uniform)
+      shaderPrograms[program].uniforms[uniform] = GL.gl.getUniformLocation(shaderPrograms[program].program, uniform)
     }
   }
 
-  Quad.init(gl)
-  Cube.init(gl)
-  plane = new TessPlane(gl, 9)
-  particles = new Particles(gl, 50000)
+  Quad.init()
+  Cube.init()
+  plane = new TessPlane(9)
+  particles = new Particles(50000)
 
   /*
   for (let i = 0; i < 4096; ++i) {
@@ -156,152 +150,88 @@ function load() {
 
 const camera = new Camera(Math.PI / 2.0, 1.0, 0.1, 100.0)
 
-function renderLoop(frameTime) {
-  if (frame === 0) {
-    timeOffset = frameTime
-  }
-
-  // const oldTime = time
-  time = frameTime - timeOffset
-  // const dt = (frameTime - oldTime)
-
-  //
-
-  camera.aspect = canvas.offsetWidth / canvas.offsetHeight
+const loop = () => {
+  camera.aspect = GL.canvas.offsetWidth / GL.canvas.offsetHeight
   //camera.focalLength = 8.0
   camera.updateProjection()
   camera.lookAt(
-    vec3.fromValues(Math.cos(time / 1000.0 * 0.1) * 2.5, 1.25, Math.sin(time / 1000.0 * 0.1) * 2.5),
+    vec3.fromValues(Math.cos(GL.time / 1000.0 * 0.1) * 2.5, 1.25, Math.sin(GL.time / 1000.0 * 0.1) * 2.5),
     vec3.fromValues(0.0, 0.0, 0.0), vec3.fromValues(0.0, 1.0, 0.0)
   )
   //camera.lookAt(vec3.fromValues(0.0, 0.0, -5.0), vec3.fromValues(0.0, 0.0, 0.0), vec3.fromValues(0.0, 1.0, 0.0))
   camera.update()
 
-  Framebuffer.bind(gl, canvas.width, canvas.height)
-  gl.clearColor(1.0, 1.0, 1.0, 0.0)
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+  Framebuffer.bind(GL.canvas.width, GL.canvas.height)
+  GL.gl.clearColor(1.0, 1.0, 1.0, 0.0)
+  GL.gl.clear(GL.gl.COLOR_BUFFER_BIT | GL.gl.DEPTH_BUFFER_BIT)
 
-  gl.enable(gl.DEPTH_TEST)
-  gl.enable(gl.CULL_FACE)
-  gl.useProgram(shaderPrograms['plane'].program)
-  gl.uniformMatrix4fv(shaderPrograms['plane'].uniforms['mvp'], false, camera.mvp)
-  gl.uniformMatrix4fv(shaderPrograms['plane'].uniforms['mv'], false, camera.view)
-  gl.uniform2f(shaderPrograms['plane'].uniforms['bias'], MIDIManager.getSliderValue(1), MIDIManager.getSliderValue(2))
-  plane.draw(gl)
-  gl.disable(gl.CULL_FACE)
+  GL.gl.enable(GL.gl.DEPTH_TEST)
+  GL.gl.enable(GL.gl.CULL_FACE)
+  GL.gl.useProgram(shaderPrograms['plane'].program)
+  GL.gl.uniformMatrix4fv(shaderPrograms['plane'].uniforms['mvp'], false, camera.mvp)
+  GL.gl.uniformMatrix4fv(shaderPrograms['plane'].uniforms['mv'], false, camera.view)
+  GL.gl.uniform2f(shaderPrograms['plane'].uniforms['bias'], MIDIManager.getSliderValue(1), MIDIManager.getSliderValue(2))
+  plane.draw()
+  GL.gl.disable(GL.gl.CULL_FACE)
 
-  gl.useProgram(shaderPrograms['color'].program)
-  gl.uniformMatrix4fv(shaderPrograms['color'].uniforms['mvp'], false, camera.mvp)
-  gl.uniformMatrix4fv(shaderPrograms['color'].uniforms['mv'], false, camera.view)
-  gl.uniform4f(shaderPrograms['color'].uniforms['color'], 0.0, 0.0, 0.0, 0.0)
-  Cube.drawOutlines(gl)
-  gl.disable(gl.DEPTH_TEST)
+  GL.gl.useProgram(shaderPrograms['color'].program)
+  GL.gl.uniformMatrix4fv(shaderPrograms['color'].uniforms['mvp'], false, camera.mvp)
+  GL.gl.uniformMatrix4fv(shaderPrograms['color'].uniforms['mv'], false, camera.view)
+  GL.gl.uniform4f(shaderPrograms['color'].uniforms['color'], 0.0, 0.0, 0.0, 0.0)
+  Cube.drawOutlines()
+  GL.gl.disable(GL.gl.DEPTH_TEST)
 
-  gl.disable(gl.SCISSOR_TEST)
+  GL.gl.disable(GL.gl.SCISSOR_TEST)
 
-  gl.enable(gl.BLEND)
-  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+  GL.gl.enable(GL.gl.BLEND)
+  GL.gl.blendFunc(GL.gl.ONE, GL.gl.ONE_MINUS_SRC_ALPHA)
   // gl.blendFunc(gl.ONE, gl.ONE)
-  gl.useProgram(shaderPrograms['particles0'].program)
-  gl.uniformMatrix4fv(shaderPrograms['particles0'].uniforms['mvp'], false, camera.mvp)
-  particles.draw(gl)
-  gl.disable(gl.BLEND)
+  GL.gl.useProgram(shaderPrograms['particles0'].program)
+  GL.gl.uniformMatrix4fv(shaderPrograms['particles0'].uniforms['mvp'], false, camera.mvp)
+  particles.draw()
+  GL.gl.disable(GL.gl.BLEND)
 
   //
 
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-  gl.drawBuffers([gl.BACK])
-  gl.viewport(0.0, 0.0, canvas.width, canvas.height)
+  GL.gl.bindFramebuffer(GL.gl.FRAMEBUFFER, null)
+  GL.gl.drawBuffers([GL.gl.BACK])
+  GL.gl.viewport(0.0, 0.0, GL.canvas.width, GL.canvas.height)
 
-  gl.activeTexture(gl.TEXTURE0)
-  gl.bindTexture(gl.TEXTURE_2D, Framebuffer.textureHdr)
+  GL.gl.activeTexture(GL.gl.TEXTURE0)
+  GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureHdr)
 
-  gl.useProgram(shaderPrograms['test'].program)
-  gl.uniform1f(shaderPrograms['test'].uniforms['time'], time)
-  gl.uniform2f(shaderPrograms['test'].uniforms['inverse_screen_size'], 1.0 / canvas.width, 1.0 / canvas.height)
-  gl.uniform2f(shaderPrograms['test'].uniforms['screen_size'], canvas.width, canvas.height)
-  gl.uniform1i(shaderPrograms['test'].uniforms['screen'], 0)
-  Quad.draw(gl)
-
-  ++frame
-  requestAnimationFrame(renderLoop)
+  GL.gl.useProgram(shaderPrograms['test'].program)
+  GL.gl.uniform1f(shaderPrograms['test'].uniforms['time'], GL.time)
+  GL.gl.uniform2f(shaderPrograms['test'].uniforms['inverse_screen_size'], 1.0 / GL.canvas.width, 1.0 / GL.canvas.height)
+  GL.gl.uniform2f(shaderPrograms['test'].uniforms['screen_size'], GL.canvas.width, GL.canvas.height)
+  GL.gl.uniform1i(shaderPrograms['test'].uniforms['screen'], 0)
+  Quad.draw()
 }
 
-function resize() {
-  const dpr = devicePixelRatio || 1
-  const width = Math.floor(innerWidth * dpr)
-  const height = Math.floor(innerHeight * dpr)
-
-  if (canvas.width !== width || canvas.height !== height) {
-    canvas.width = width
-    canvas.height = height
-  }
-
-  Framebuffer.init(gl, canvas.width, canvas.height)
+const resize = () => {
+  Framebuffer.init(GL.canvas.width, GL.canvas.height)
 }
 
-addEventListener('load', () => {
-  console.info('Load...')
-
-  ResourceManager.add('vertex_test', 'shaders/test.vs.glsl')
-  ResourceManager.add('vertex_particleBasic', 'shaders/particleBasic.vs.glsl')
-  ResourceManager.add('vertex_flat', 'shaders/flat.vs.glsl')
-  ResourceManager.add('vertex_plane', 'shaders/plane.vs.glsl')
-  ResourceManager.add('fragment_test', 'shaders/test.fs.glsl')
-  ResourceManager.add('fragment_particleFlat', 'shaders/particleFlat.fs.glsl')
-  ResourceManager.add('fragment_flat', 'shaders/flat.fs.glsl')
-  ResourceManager.add('fragment_color', 'shaders/color.fs.glsl')
-  ResourceManager.add('fragment_plane', 'shaders/plane.fs.glsl')
-  //ResourceManager.add('fragment_colorSpace', 'shaders/colorSpace.fs.glsl')
-  
+const afterLoad = () => {
   ResourceManager.onAllLoaded(() => {
-    console.info('Creating canvas...')
-    canvas = document.createElement('canvas')
-
-    Object.assign(document.body.style, {
-      margin: '0',
-      padding: '0',
-      overflow: 'hidden',
-      position: 'fixed',
-      width: '100vw',
-      height: '100vh'
-    })
-    
-    Object.assign(canvas.style, {
-      display: 'block',
-      width: '100%',
-      height: '100%'
-    })
-
-    console.info('Getting context...')
-    gl = canvas.getContext('webgl2', { alpha: false, depth: false, stencil: false, antialias: false })
-    if (gl === null) {
-      alert('WebGL 2.0 not supported apparently. Weird.\n')
-      return
-    }
-
-    const ext = gl.getExtension('EXT_color_buffer_float')
-    if (!ext) {
-      console.error('Floating-point rendering not supported! We kind of want that.')
-      return
-    }
-
-    console.log(gl.getSupportedExtensions())
-
     console.info('Compiling shaders...')
     if (!load()) {
       alert('Loading failed.\n' +
         'This shouldn\'t happen. It\'s probably a bug.')
       return
     }
-
-    resize()
-    addEventListener('resize', resize)
-
-    document.body.appendChild(canvas)
-
-    requestAnimationFrame(renderLoop)
   })  
-})
+}
+
+ResourceManager.add('vertex_test', 'shaders/test.vs.glsl')
+ResourceManager.add('vertex_particleBasic', 'shaders/particleBasic.vs.glsl')
+ResourceManager.add('vertex_flat', 'shaders/flat.vs.glsl')
+ResourceManager.add('vertex_plane', 'shaders/plane.vs.glsl')
+ResourceManager.add('fragment_test', 'shaders/test.fs.glsl')
+ResourceManager.add('fragment_particleFlat', 'shaders/particleFlat.fs.glsl')
+ResourceManager.add('fragment_flat', 'shaders/flat.fs.glsl')
+ResourceManager.add('fragment_color', 'shaders/color.fs.glsl')
+ResourceManager.add('fragment_plane', 'shaders/plane.fs.glsl')
 
 await MIDIManager.initialize()
+GL.init(afterLoad, loop, resize)

@@ -1,23 +1,8 @@
+import { GL } from './gl.js'
 import { StaticGeometry } from './staticgeometry.js'
 
 export class TessPlane {
-  constructor(gl, res) {
-    const t = this.createBuffers(res)
-    this.count = t[1].length
-
-    console.log(t)
-
-    this.vao = gl.createVertexArray()
-    gl.bindVertexArray(this.vao)
-
-    const vertexOffet = StaticGeometry.addVertices(gl, new Float32Array(t[0]))
-    this.elementOffset = StaticGeometry.addElements(gl, new Uint16Array(t[1]))
-
-    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8, vertexOffet)
-    gl.enableVertexAttribArray(0)
-  }
-
-  createBuffers(res) {
+  #createBuffers(res) {
     if (res < 1) { res = 1 }
 
     const n_strips = Math.pow(2, res - 1)
@@ -61,8 +46,24 @@ export class TessPlane {
     return [vertexBuffer, indexBuffer]
   }
 
-  draw(gl) {
-    gl.bindVertexArray(this.vao)
-    gl.drawElements(gl.TRIANGLES, this.count, gl.UNSIGNED_SHORT, this.elementOffset)
+  draw() {
+    GL.gl.bindVertexArray(this.vao)
+    GL.gl.drawElements(GL.gl.TRIANGLES, this.count, GL.gl.UNSIGNED_SHORT, this.elementOffset)
+  }
+  
+  constructor(res) {
+    const t = this.#createBuffers(res)
+    this.count = t[1].length
+
+    console.log(t)
+
+    this.vao = GL.gl.createVertexArray()
+    GL.gl.bindVertexArray(this.vao)
+
+    const vertexOffet = StaticGeometry.addVertices(GL.gl, new Float32Array(t[0]))
+    this.elementOffset = StaticGeometry.addElements(GL.gl, new Uint16Array(t[1]))
+
+    GL.gl.vertexAttribPointer(0, 2, GL.gl.FLOAT, false, 8, vertexOffet)
+    GL.gl.enableVertexAttribArray(0)
   }
 }

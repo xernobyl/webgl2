@@ -1,9 +1,11 @@
+import { GL } from './gl.js'
+
 export class TexturePool {
   constructor() {
     this.textures = []
   }
 
-  getTexture(gl, width, height, format, type, internalFormat) {
+  getTexture(width, height, format, type, internalFormat) {
     // Try to find existing texture
     const tex = this.textures.find(t => 
       t.width === width && 
@@ -19,7 +21,7 @@ export class TexturePool {
     }
 
     // Create new texture
-    const newTex = this.createTexture(gl, width, height, format, type, internalFormat);
+    const newTex = this.createTexture(width, height, format, type, internalFormat);
     newTex.inUse = true
     this.textures.push(newTex)
     return newTex
@@ -32,15 +34,15 @@ export class TexturePool {
     }
   }
 
-  createTexture(gl, width, height, format, type, internalFormat) {
-    const texture = gl.createTexture()
-    gl.bindTexture(gl.TEXTURE_2D, texture)
-    gl.texStorage2D(gl.TEXTURE_2D, 1, internalFormat, width, height)
+  createTexture(width, height, format, type, internalFormat) {
+    const texture = GL.gl.createTexture()
+    GL.gl.bindTexture(GL.gl.TEXTURE_2D, texture)
+    GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, internalFormat, width, height)
     // Set appropriate filtering
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    GL.gl.texParameteri(GL.gl.TEXTURE_2D, GL.gl.TEXTURE_MIN_FILTER, GL.gl.LINEAR)
+    GL.gl.texParameteri(GL.gl.TEXTURE_2D, GL.gl.TEXTURE_MAG_FILTER, GL.gl.LINEAR)
+    GL.gl.texParameteri(GL.gl.TEXTURE_2D, GL.gl.TEXTURE_WRAP_S, GL.gl.CLAMP_TO_EDGE)
+    GL.gl.texParameteri(GL.gl.TEXTURE_2D, GL.gl.TEXTURE_WRAP_T, GL.gl.CLAMP_TO_EDGE)
     
     return {
       texture,

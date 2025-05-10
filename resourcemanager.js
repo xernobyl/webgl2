@@ -49,3 +49,25 @@ export class ResourceManager {
     return ResourceManager.#resources[name].data
   }
 }
+
+/*
+export class ResourceManager {
+  static #resources = {}
+
+  static async load(resources, afterLoad) {
+    const promisses = []
+    
+    for (const resource of resources) {
+      promisses.push(fetch(resource.url).then(data => {
+        ResourceManager.#resources[name] = data
+      }))
+    }
+
+    return await Promise.all(promisses).then(afterLoad)
+  }
+
+  static get(name) {
+    return this.#resources[name]
+  }
+}
+*/

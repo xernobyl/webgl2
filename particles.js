@@ -1,7 +1,8 @@
+import { GL } from './gl.js'
 import { vec3 } from './gl-matrix/index.js'
 
 export class Particles {
-  constructor(gl, nParticles) {
+  constructor(nParticles) {
     this.nParticles = nParticles
     const buffer = new Float32Array(nParticles * 6)	// position + velocity
 
@@ -26,20 +27,20 @@ export class Particles {
       buffer[bi + 5] = vz
     }
 
-    this.vbo = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo)
-    gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.DYNAMIC_COPY)
+    this.vbo = GL.gl.createBuffer()
+    GL.gl.bindBuffer(GL.gl.ARRAY_BUFFER, this.vbo)
+    GL.gl.bufferData(GL.gl.ARRAY_BUFFER, buffer, GL.gl.DYNAMIC_COPY)
 
-    this.vao = gl.createVertexArray()
-    gl.bindVertexArray(this.vao)
-    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 24, 0)
-    gl.enableVertexAttribArray(0)
-    gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 24, 12)
-    gl.enableVertexAttribArray(1)
+    this.vao = GL.gl.createVertexArray()
+    GL.gl.bindVertexArray(this.vao)
+    GL.gl.vertexAttribPointer(0, 3, GL.gl.FLOAT, false, 24, 0)
+    GL.gl.enableVertexAttribArray(0)
+    GL.gl.vertexAttribPointer(1, 3, GL.gl.FLOAT, false, 24, 12)
+    GL.gl.enableVertexAttribArray(1)
   }
 
-  draw(gl) {
-    gl.bindVertexArray(this.vao)
-    gl.drawArrays(gl.POINTS, 0, this.nParticles)
+  draw() {
+    GL.gl.bindVertexArray(this.vao)
+    GL.gl.drawArrays(GL.gl.POINTS, 0, this.nParticles)
   }
 }

@@ -1,7 +1,11 @@
+import { GL } from './gl.js'
 import { StaticGeometry } from './staticgeometry.js'
 
 export class Cube {
-  static init(gl) {
+  static #vao
+  static #elementOffset
+
+  static init() {
     const vertexBuffer = new Int8Array([
       1,1,1,0,0,1,1,1,-1,1,1,0,0,1,0,1,-1,-1,1,0,0,1,0,0,1,-1,1,0,0,1,1,0,1,1,1,1,0,0,0,1,1,-1,1,1,0,0,0,0,1,-1,-1,1,0,0,1,0,1,1,-1,1,0,0,1,1,1,1,1,0,1,0,1,0,1,1,-1,0,1,0,1,1,-1,1,-1,0,1,0,0,1,-1,1,1,0,1,0,0,0,-1,1,1,-1,0,0,1,1,-1,1,-1,-1,0,0,0,1,-1,-1,-1,-1,0,0,0,0,-1,-1,1,-1,0,0,1,0,-1,-1,-1,0,-1,0,0,0,1,-1,-1,0,-1,0,1,0,1,-1,1,0,-1,0,1,1,-1,-1,1,0,-1,0,0,1,1,-1,-1,0,0,-1,0,0,-1,-1,-1,0,0,-1,1,0,-1,1,-1,0,0,-1,1,1,1,1,-1,0,0,-1,0,1])
     const indicesBuffer = new Uint8Array([
@@ -10,27 +14,27 @@ export class Cube {
       0, 1, 0, 3, 0, 7, 1, 2, 2, 5, 5, 6, 6, 7, 10, 11, 13, 14, 15, 16, 20, 21, 22, 23
     ])
 
-    this.vao = gl.createVertexArray()
-    gl.bindVertexArray(this.vao)
+    Cube.#vao = GL.gl.createVertexArray()
+    GL.gl.bindVertexArray(Cube.#vao)
 
-    const vertexOffet = StaticGeometry.addVertices(gl, vertexBuffer)
-    this.elementOffset = StaticGeometry.addElements(gl, indicesBuffer)
+    const vertexOffet = StaticGeometry.addVertices(GL.gl, vertexBuffer)
+    Cube.#elementOffset = StaticGeometry.addElements(GL.gl, indicesBuffer)
 
-    gl.vertexAttribPointer(0, 3, gl.BYTE, false, 8, vertexOffet + 0)
-    gl.enableVertexAttribArray(0)
-    gl.vertexAttribPointer(1, 3, gl.BYTE, false, 8, vertexOffet + 3)
-    gl.enableVertexAttribArray(1)
-    gl.vertexAttribPointer(2, 2, gl.BYTE, false, 8, vertexOffet + 6)
-    gl.enableVertexAttribArray(2)
+    GL.gl.vertexAttribPointer(0, 3, GL.gl.BYTE, false, 8, vertexOffet + 0)
+    GL.gl.enableVertexAttribArray(0)
+    GL.gl.vertexAttribPointer(1, 3, GL.gl.BYTE, false, 8, vertexOffet + 3)
+    GL.gl.enableVertexAttribArray(1)
+    GL.gl.vertexAttribPointer(2, 2, GL.gl.BYTE, false, 8, vertexOffet + 6)
+    GL.gl.enableVertexAttribArray(2)
   }
 
-  static draw(gl) {
-    gl.bindVertexArray(this.vao)
-    gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_BYTE, this.elementOffset)
+  static draw() {
+    GL.gl.bindVertexArray(Cube.#vao)
+    GL.gl.drawElements(GL.gl.TRIANGLES, 36, GL.gl.UNSIGNED_BYTE, Cube.#elementOffset)
   }
 
-  static drawOutlines(gl) {
-    gl.bindVertexArray(this.vao)
-    gl.drawElements(gl.LINES, 24, gl.UNSIGNED_BYTE, this.elementOffset + 36)
+  static drawOutlines() {
+    GL.gl.bindVertexArray(Cube.#vao)
+    GL.gl.drawElements(GL.gl.LINES, 24, GL.gl.UNSIGNED_BYTE, Cube.#elementOffset + 36)
   }
 }
