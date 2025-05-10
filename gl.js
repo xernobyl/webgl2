@@ -72,6 +72,8 @@ export class GL {
   }
 
   static #onLoad() {
+    
+
     GL.#createCanvas()
     GL.#createContext()
 
@@ -91,7 +93,8 @@ export class GL {
     GL.#cbLoad = load
     GL.#cbLoop = loop
     GL.#cbResize = resize
-    addEventListener('load', GL.#onLoad)
+    //addEventListener('load', GL.#onLoad)
+    GL.#onLoad()
   }
 
   static get gl() {

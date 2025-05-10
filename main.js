@@ -204,5 +204,6 @@ ResourceManager.add('fragment_flat', 'shaders/flat.fs.glsl')
 ResourceManager.add('fragment_color', 'shaders/color.fs.glsl')
 ResourceManager.add('fragment_plane', 'shaders/plane.fs.glsl')
 ResourceManager.onAllLoaded(() => {
+  console.info('All resources loaded...')
   GL.init(afterLoad, loop, resize)
 })

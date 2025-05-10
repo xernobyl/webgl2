@@ -14,7 +14,7 @@ export class Quad {
 
     Quad.#vao = GL.gl.createVertexArray()
     GL.gl.bindVertexArray(Quad.#vao)
-    const offset = StaticGeometry.addVertices(GL.gl, new Int8Array(fullScreenTriangle))
+    const offset = StaticGeometry.addVertices(new Int8Array(fullScreenTriangle))
     GL.gl.vertexAttribPointer(0, 2, GL.gl.BYTE, false, 0, offset)
     GL.gl.enableVertexAttribArray(0)
   }

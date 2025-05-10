@@ -17,8 +17,8 @@ export class Cube {
     Cube.#vao = GL.gl.createVertexArray()
     GL.gl.bindVertexArray(Cube.#vao)
 
-    const vertexOffet = StaticGeometry.addVertices(GL.gl, vertexBuffer)
-    Cube.#elementOffset = StaticGeometry.addElements(GL.gl, indicesBuffer)
+    const vertexOffet = StaticGeometry.addVertices(vertexBuffer)
+    Cube.#elementOffset = StaticGeometry.addElements(indicesBuffer)
 
     GL.gl.vertexAttribPointer(0, 3, GL.gl.BYTE, false, 8, vertexOffet + 0)
     GL.gl.enableVertexAttribArray(0)

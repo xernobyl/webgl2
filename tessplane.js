@@ -60,8 +60,8 @@ export class TessPlane {
     this.vao = GL.gl.createVertexArray()
     GL.gl.bindVertexArray(this.vao)
 
-    const vertexOffet = StaticGeometry.addVertices(GL.gl, new Float32Array(t[0]))
-    this.elementOffset = StaticGeometry.addElements(GL.gl, new Uint16Array(t[1]))
+    const vertexOffet = StaticGeometry.addVertices(new Float32Array(t[0]))
+    this.elementOffset = StaticGeometry.addElements(new Uint16Array(t[1]))
 
     GL.gl.vertexAttribPointer(0, 2, GL.gl.FLOAT, false, 8, vertexOffet)
     GL.gl.enableVertexAttribArray(0)
