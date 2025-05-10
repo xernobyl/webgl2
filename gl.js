@@ -78,6 +78,10 @@ export class GL {
     GL.#onResize()
     addEventListener('resize', GL.#onResize)
 
+    if (GL.#cbLoad !== null) {
+      GL.#cbLoad()
+    }
+
     document.body.appendChild(GL.#canvas)
     
     requestAnimationFrame(GL.#renderLoop)

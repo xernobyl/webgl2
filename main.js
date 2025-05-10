@@ -75,30 +75,8 @@ const shaderPrograms = {
       'bias': null
     }
   }
-
-  /*'flow0': {
-    'vertex': ['flow0'],
-    'uniforms': {
-      'mvp': null,
-      'mv': null,
-    },
-    'varyings': ['position', 'velocity']
-  }*/
 }
 
-/*
-const pointLights = []
-
-function createLightClusters(camera) {
-  const x = 16
-  const y = 9
-  const z = 32
-
-  for (let i in pointLights) {
-    let r = pointLights[i].color.max()
-  }
-}
-*/
 
 let particles = null
 let plane = null
@@ -131,19 +109,12 @@ const load = () => {
     }
   }
 
+  console.log('LOADING THINGS')
+
   Quad.init()
   Cube.init()
   plane = new TessPlane(9)
   particles = new Particles(50000)
-
-  /*
-  for (let i = 0; i < 4096; ++i) {
-    pointLights.push({
-      position: vec3.fromValues(Math.random() * 100.0 - 50.0, Math.random() * 50.0, Math.random() * 100.0 - 50.0),
-      color: vec3.fromValues(Math.random() * 10.0, Math.random() * 10.0, Math.random() * 10.0)
-    })
-  }
-  */
 
   return true
 }
@@ -213,15 +184,15 @@ const resize = () => {
 }
 
 const afterLoad = () => {
-  ResourceManager.onAllLoaded(() => {
-    console.info('Compiling shaders...')
-    if (!load()) {
-      alert('Loading failed.\n' +
-        'This shouldn\'t happen. It\'s probably a bug.')
-      return
-    }
-  })  
+  console.info('afterLoad()')
+  if (!load()) {
+    alert('Loading failed.\n' +
+      'This shouldn\'t happen. It\'s probably a bug.')
+    return
+  }
 }
+
+await MIDIManager.initialize()
 
 ResourceManager.add('vertex_test', 'shaders/test.vs.glsl')
 ResourceManager.add('vertex_particleBasic', 'shaders/particleBasic.vs.glsl')
@@ -232,6 +203,6 @@ ResourceManager.add('fragment_particleFlat', 'shaders/particleFlat.fs.glsl')
 ResourceManager.add('fragment_flat', 'shaders/flat.fs.glsl')
 ResourceManager.add('fragment_color', 'shaders/color.fs.glsl')
 ResourceManager.add('fragment_plane', 'shaders/plane.fs.glsl')
-
-await MIDIManager.initialize()
-GL.init(afterLoad, loop, resize)
+ResourceManager.onAllLoaded(() => {
+  GL.init(afterLoad, loop, resize)
+})
