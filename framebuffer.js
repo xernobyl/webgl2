@@ -45,10 +45,8 @@ export class Framebuffer {
     throw new Error(`unexpected checkFramebufferStatus: ${status}`)
   }
   
-  static init(maxWidth, maxHeight) {
-    console.debug(maxWidth, maxHeight, Framebuffer.#width, Framebuffer.#height)
-
-    if (maxWidth <= Framebuffer.#width && maxHeight <= Framebuffer.#height) {
+  static init(width, height) {
+    if (width === Framebuffer.#width && height === Framebuffer.#height) {
       console.debug('Framebuffer resize: Ignoring')
       return true
     }
@@ -78,27 +76,27 @@ export class Framebuffer {
     Framebuffer.#textureHDREighth = GL.gl.createTexture()
     Framebuffer.#textureDepth = GL.gl.createTexture()
 
-    Framebuffer.#width = maxWidth
-    Framebuffer.#height = maxHeight
+    Framebuffer.#width = width
+    Framebuffer.#height = height
 
     GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureHDR)
-    GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.R11F_G11F_B10F, maxWidth, maxHeight)
+    GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.R11F_G11F_B10F, width, height)
     Framebuffer.#setTextureParams(GL.gl.CLAMP_TO_EDGE, GL.gl.LINEAR)
 
     GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureHDRHalf)
-    GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.R11F_G11F_B10F, Math.ceil(maxWidth / 2), Math.ceil(maxHeight / 2))
+    GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.R11F_G11F_B10F, Math.ceil(width / 2), Math.ceil(height / 2))
     Framebuffer.#setTextureParams(GL.gl.CLAMP_TO_EDGE, GL.gl.LINEAR)
     
     GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureHDRQuarter)
-    GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.R11F_G11F_B10F, Math.ceil(maxWidth / 4), Math.ceil(maxHeight / 4))
+    GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.R11F_G11F_B10F, Math.ceil(width / 4), Math.ceil(height / 4))
     Framebuffer.#setTextureParams(GL.gl.CLAMP_TO_EDGE, GL.gl.LINEAR)
 
     GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureHDREighth)
-    GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.R11F_G11F_B10F, Math.ceil(maxWidth / 8), Math.ceil(maxHeight / 8))
+    GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.R11F_G11F_B10F, Math.ceil(width / 8), Math.ceil(height / 8))
     Framebuffer.#setTextureParams(GL.gl.CLAMP_TO_EDGE, GL.gl.LINEAR)
     
     GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureDepth)
-    GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.DEPTH_COMPONENT24, maxWidth, maxHeight)
+    GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.DEPTH_COMPONENT24, width, height)
     Framebuffer.#setTextureParams(GL.gl.CLAMP_TO_EDGE, GL.gl.NEAREST)
 
     GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebuffer)
@@ -133,7 +131,15 @@ export class Framebuffer {
     return true
   }
 
-  static bind(width, height) {
+  static bind(width=0, height=0) {
+    if (width === 0) {
+      width = Framebuffer.#width
+    }
+
+    if (height === 0) {
+      height = Framebuffer.#height
+    }
+
     GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebuffer)
     GL.gl.viewport(0, 0, width, height)
     GL.gl.scissor(0, 0, width, height)
