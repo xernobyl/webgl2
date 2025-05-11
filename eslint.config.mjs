@@ -1,4 +1,4 @@
-import js from '@eslint/js'
+  import js from '@eslint/js'
 import globals from 'globals'
 //import importPlugin from 'eslint-plugin-import'
 import { defineConfig } from 'eslint/config'
@@ -95,7 +95,9 @@ export default defineConfig([
       'no-await-in-loop': 'error',
       'no-constant-binary-expression': 'error',
       'no-constructor-return': 'error',
-      'no-promise-executor-return': 'error'
+      'no-promise-executor-return': 'error',
+      'no-undef': 'error',
+      'no-implicit-globals': 'error'
     }
   }
 ])

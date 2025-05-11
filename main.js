@@ -169,7 +169,7 @@ const loop = () => {
   GL.gl.viewport(0.0, 0.0, GL.canvas.width, GL.canvas.height)
 
   GL.gl.activeTexture(GL.gl.TEXTURE0)
-  GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureHdr)
+  GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureHDR)
 
   GL.gl.useProgram(shaderPrograms['test'].program)
   GL.gl.uniform1f(shaderPrograms['test'].uniforms['time'], GL.time)

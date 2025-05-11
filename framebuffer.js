@@ -4,16 +4,16 @@ export class Framebuffer {
   static #width
   static #height
 
-  static #framebuffer
-  static #framebufferHalf
-  static #framebufferQuarter
-  static #framebufferEighth
-
-  static #textureHdr
+  static #textureHDR
   static #textureHDRHalf
   static #textureHDRQuarter
   static #textureHDREighth
   static #textureDepth
+
+  static #framebuffer
+  static #framebufferHalf
+  static #framebufferQuarter
+  static #framebufferEighth
 
   static #setTextureParams(wrap, filter) {
     GL.gl.texParameteri(GL.gl.TEXTURE_2D, GL.gl.TEXTURE_WRAP_S, wrap)
@@ -65,14 +65,14 @@ export class Framebuffer {
     } else {
       console.debug('Framebuffer resize: Resizing')
 
-      GL.gl.deleteTexture(Framebuffer.#textureHdr)
+      GL.gl.deleteTexture(Framebuffer.#textureHDR)
       GL.gl.deleteTexture(Framebuffer.#textureHDRHalf)
       GL.gl.deleteTexture(Framebuffer.#textureHDRQuarter)
       GL.gl.deleteTexture(Framebuffer.#textureHDREighth)
       GL.gl.deleteTexture(Framebuffer.#textureDepth)
     }
 
-    Framebuffer.#textureHdr = GL.gl.createTexture()
+    Framebuffer.#textureHDR = GL.gl.createTexture()
     Framebuffer.#textureHDRHalf = GL.gl.createTexture()
     Framebuffer.#textureHDRQuarter = GL.gl.createTexture()
     Framebuffer.#textureHDREighth = GL.gl.createTexture()
@@ -81,7 +81,7 @@ export class Framebuffer {
     Framebuffer.#width = maxWidth
     Framebuffer.#height = maxHeight
 
-    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureHdr)
+    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureHDR)
     GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.R11F_G11F_B10F, maxWidth, maxHeight)
     Framebuffer.#setTextureParams(GL.gl.CLAMP_TO_EDGE, GL.gl.LINEAR)
 
@@ -102,7 +102,7 @@ export class Framebuffer {
     Framebuffer.#setTextureParams(GL.gl.CLAMP_TO_EDGE, GL.gl.NEAREST)
 
     GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebuffer)
-    GL.gl.framebufferTexture2D(GL.gl.DRAW_FRAMEBUFFER, GL.gl.COLOR_ATTACHMENT0, GL.gl.TEXTURE_2D, Framebuffer.#textureHdr, 0)
+    GL.gl.framebufferTexture2D(GL.gl.DRAW_FRAMEBUFFER, GL.gl.COLOR_ATTACHMENT0, GL.gl.TEXTURE_2D, Framebuffer.#textureHDR, 0)
     GL.gl.framebufferTexture2D(GL.gl.DRAW_FRAMEBUFFER, GL.gl.DEPTH_ATTACHMENT, GL.gl.TEXTURE_2D, Framebuffer.#textureDepth, 0)
     if (!Framebuffer.#checkFramebufferStatus()) {
       return false
@@ -138,5 +138,33 @@ export class Framebuffer {
     GL.gl.viewport(0, 0, width, height)
     GL.gl.scissor(0, 0, width, height)
     GL.gl.enable(GL.gl.SCISSOR_TEST)
+  }
+
+  static get width() {
+    return Framebuffer.#width
+  }
+
+  static get height() {
+    return Framebuffer.#height
+  }
+
+  static get textureHDR() {
+    return Framebuffer.#textureHDR
+  }
+
+  static get textureHDRHalf() {
+    return Framebuffer.#textureHDRHalf
+  }
+
+  static get textureHDRQuarter() {
+    return Framebuffer.#textureHDRQuarter
+  }
+
+  static get textureHDREighth() {
+    return Framebuffer.#textureHDREighth
+  }
+
+  static get textureDepth() {
+    return Framebuffer.#textureDepth
   }
 }

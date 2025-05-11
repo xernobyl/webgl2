@@ -8,7 +8,6 @@ uniform highp float time;
 uniform sampler2D screen;
 in vec2 p;
 
-void main()
-{
-	frag_color = texture(screen, p);
+void main() {
+  frag_color = texture(screen, p);
 }
