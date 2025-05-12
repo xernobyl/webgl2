@@ -1,19 +1,25 @@
+/* eslint-disable max-lines-per-function */
 import { GL } from './gl.js'
 
 export class Framebuffer {
   static #width
   static #height
 
-  static #textureHDR
+  static #textureHDR0
+  static #textureHDR1
+  static #textureMotion
   static #textureHDRHalf
   static #textureHDRQuarter
   static #textureHDREighth
   static #textureDepth
 
-  static #framebuffer
+  static #framebuffer0
+  static #framebuffer1
   static #framebufferHalf
   static #framebufferQuarter
   static #framebufferEighth
+
+  static #oddFrame = false
 
   static #setTextureParams(wrap, filter) {
     GL.gl.texParameteri(GL.gl.TEXTURE_2D, GL.gl.TEXTURE_WRAP_S, wrap)
@@ -56,21 +62,26 @@ export class Framebuffer {
     if (isNew) {
       console.debug('Framebuffer resize: New')
 
-      Framebuffer.#framebuffer = GL.gl.createFramebuffer()
+      Framebuffer.#framebuffer0 = GL.gl.createFramebuffer()
+      Framebuffer.#framebuffer1 = GL.gl.createFramebuffer()
       Framebuffer.#framebufferHalf = GL.gl.createFramebuffer()
       Framebuffer.#framebufferQuarter = GL.gl.createFramebuffer()
       Framebuffer.#framebufferEighth = GL.gl.createFramebuffer()
     } else {
       console.debug('Framebuffer resize: Resizing')
 
-      GL.gl.deleteTexture(Framebuffer.#textureHDR)
+      GL.gl.deleteTexture(Framebuffer.#textureHDR0)
+      GL.gl.deleteTexture(Framebuffer.#textureHDR1)
+      GL.gl.deleteTexture(Framebuffer.#textureMotion)
       GL.gl.deleteTexture(Framebuffer.#textureHDRHalf)
       GL.gl.deleteTexture(Framebuffer.#textureHDRQuarter)
       GL.gl.deleteTexture(Framebuffer.#textureHDREighth)
       GL.gl.deleteTexture(Framebuffer.#textureDepth)
     }
 
-    Framebuffer.#textureHDR = GL.gl.createTexture()
+    Framebuffer.#textureHDR0 = GL.gl.createTexture()
+    Framebuffer.#textureHDR1 = GL.gl.createTexture()
+    Framebuffer.#textureMotion = GL.gl.createTexture()
     Framebuffer.#textureHDRHalf = GL.gl.createTexture()
     Framebuffer.#textureHDRQuarter = GL.gl.createTexture()
     Framebuffer.#textureHDREighth = GL.gl.createTexture()
@@ -81,8 +92,16 @@ export class Framebuffer {
 
     console.debug(`Framebuffer: ${width} × ${height}`)
 
-    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureHDR)
+    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureHDR0)
     GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.R11F_G11F_B10F, width, height)
+    Framebuffer.#setTextureParams(GL.gl.CLAMP_TO_EDGE, GL.gl.LINEAR)
+
+    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureHDR1)
+    GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.R11F_G11F_B10F, width, height)
+    Framebuffer.#setTextureParams(GL.gl.CLAMP_TO_EDGE, GL.gl.LINEAR)
+
+    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureMotion)
+    GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.RG16F, width, height)
     Framebuffer.#setTextureParams(GL.gl.CLAMP_TO_EDGE, GL.gl.LINEAR)
 
     GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureHDRHalf)
@@ -101,13 +120,23 @@ export class Framebuffer {
     GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.DEPTH_COMPONENT24, width, height)
     Framebuffer.#setTextureParams(GL.gl.CLAMP_TO_EDGE, GL.gl.NEAREST)
 
-    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebuffer)
-    GL.gl.framebufferTexture2D(GL.gl.DRAW_FRAMEBUFFER, GL.gl.COLOR_ATTACHMENT0, GL.gl.TEXTURE_2D, Framebuffer.#textureHDR, 0)
+    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebuffer0)
+    GL.gl.framebufferTexture2D(GL.gl.DRAW_FRAMEBUFFER, GL.gl.COLOR_ATTACHMENT0, GL.gl.TEXTURE_2D, Framebuffer.#textureHDR0, 0)
+    GL.gl.framebufferTexture2D(GL.gl.DRAW_FRAMEBUFFER, GL.gl.COLOR_ATTACHMENT1, GL.gl.TEXTURE_2D, Framebuffer.#textureMotion, 0)
     GL.gl.framebufferTexture2D(GL.gl.DRAW_FRAMEBUFFER, GL.gl.DEPTH_ATTACHMENT, GL.gl.TEXTURE_2D, Framebuffer.#textureDepth, 0)
     if (!Framebuffer.#checkFramebufferStatus()) {
       return false
     }
-    GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
+    GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])  // GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0, GL.gl.COLOR_ATTACHMENT1])
+
+    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebuffer1)
+    GL.gl.framebufferTexture2D(GL.gl.DRAW_FRAMEBUFFER, GL.gl.COLOR_ATTACHMENT0, GL.gl.TEXTURE_2D, Framebuffer.#textureHDR1, 0)
+    GL.gl.framebufferTexture2D(GL.gl.DRAW_FRAMEBUFFER, GL.gl.COLOR_ATTACHMENT1, GL.gl.TEXTURE_2D, Framebuffer.#textureMotion, 0)
+    GL.gl.framebufferTexture2D(GL.gl.DRAW_FRAMEBUFFER, GL.gl.DEPTH_ATTACHMENT, GL.gl.TEXTURE_2D, Framebuffer.#textureDepth, 0)
+    if (!Framebuffer.#checkFramebufferStatus()) {
+      return false
+    }
+    GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])  // GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0, GL.gl.COLOR_ATTACHMENT1])
 
     GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferHalf)
     GL.gl.framebufferTexture2D(GL.gl.DRAW_FRAMEBUFFER, GL.gl.COLOR_ATTACHMENT0, GL.gl.TEXTURE_2D, Framebuffer.#textureHDRHalf, 0)
@@ -142,7 +171,7 @@ export class Framebuffer {
       height = Framebuffer.#height
     }
 
-    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebuffer)
+    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebuffer0)
     GL.gl.viewport(0, 0, width, height)
     GL.gl.scissor(0, 0, width, height)
     GL.gl.enable(GL.gl.SCISSOR_TEST)
@@ -157,7 +186,7 @@ export class Framebuffer {
   }
 
   static get textureHDR() {
-    return Framebuffer.#textureHDR
+    return Framebuffer.#textureHDR0
   }
 
   static get textureHDRHalf() {
