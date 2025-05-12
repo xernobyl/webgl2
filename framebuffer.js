@@ -163,6 +163,10 @@ export class Framebuffer {
   }
 
   static bind(width=0, height=0) {
+    this.#oddFrame = !this.#oddFrame
+    
+    const useScisor = width !== 0 || height !== 0
+    
     if (width === 0) {
       width = Framebuffer.#width
     }
@@ -171,10 +175,12 @@ export class Framebuffer {
       height = Framebuffer.#height
     }
 
-    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebuffer0)
+    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, this.#oddFrame ? Framebuffer.#framebuffer1 : Framebuffer.#framebuffer0)
     GL.gl.viewport(0, 0, width, height)
-    GL.gl.scissor(0, 0, width, height)
-    GL.gl.enable(GL.gl.SCISSOR_TEST)
+    if (useScisor) {
+      GL.gl.scissor(0, 0, width, height)
+      GL.gl.enable(GL.gl.SCISSOR_TEST)
+    }
   }
 
   static get width() {
@@ -186,7 +192,11 @@ export class Framebuffer {
   }
 
   static get textureHDR() {
-    return Framebuffer.#textureHDR0
+    return this.#oddFrame ? Framebuffer.#textureHDR1 : Framebuffer.#textureHDR0
+  }
+
+  static get textureAccum() {
+    return this.#oddFrame ? Framebuffer.#textureHDR0 : Framebuffer.#textureHDR1
   }
 
   static get textureHDRHalf() {

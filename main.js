@@ -141,7 +141,7 @@ export class App {
     //camera.lookAt(vec3.fromValues(0.0, 0.0, -5.0), vec3.fromValues(0.0, 0.0, 0.0), vec3.fromValues(0.0, 1.0, 0.0))
     App.#camera.update()
 
-    Framebuffer.bind(GL.canvas.width, GL.canvas.height)
+    Framebuffer.bind()
     GL.gl.clearColor(1.0, 1.0, 1.0, 0.0)
     GL.gl.clear(GL.gl.COLOR_BUFFER_BIT | GL.gl.DEPTH_BUFFER_BIT)
 
@@ -203,6 +203,8 @@ export class App {
         'This shouldn\'t happen. It\'s probably a bug.')
       return
     }
+
+    window.registerCommand('scale', scale => App.frameBufferScale = scale)
   }
 
   static init() {
