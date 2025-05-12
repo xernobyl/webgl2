@@ -43,7 +43,7 @@ export class ScaleThing {
       return
     }
 
-    if (ScaleThing.#width === undefined) {
+    if (!ScaleThing.#width) {
       ScaleThing.#framebufferPing = GL.gl.createFramebuffer()
       ScaleThing.#framebufferPong = GL.gl.createFramebuffer()
     } else {
@@ -72,5 +72,16 @@ export class ScaleThing {
     if (!ScaleThing.#checkFramebufferStatus()) {
       return false
     }
+  }
+
+  free() {
+    GL.gl.deleteFramebuffer(ScaleThing.#framebufferPing)
+    GL.gl.deleteFramebuffer(ScaleThing.#framebufferPong)
+    
+    GL.gl.deleteTexture(ScaleThing.#texturePing)
+    GL.gl.deleteTexture(ScaleThing.#texturePong)
+
+    ScaleThing.#width = 0
+    ScaleThing.#height = 0
   }
 }
