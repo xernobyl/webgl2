@@ -55,8 +55,6 @@ export class TessPlane {
     const t = this.#createBuffers(res)
     this.count = t[1].length
 
-    console.log(t)
-
     this.vao = GL.gl.createVertexArray()
     GL.gl.bindVertexArray(this.vao)
 
