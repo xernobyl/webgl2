@@ -42,17 +42,20 @@ export class GL {
   }
 
   static #onResize() {
+    const rect = GL.#canvas.getBoundingClientRect()
     const dpr = devicePixelRatio || 1
-    const width = Math.floor(innerWidth * dpr)
-    const height = Math.floor(innerHeight * dpr)
+    const width = Math.floor(rect.width * dpr)
+    const height = Math.floor(rect.height * dpr)
+
+    console.log(width, height)
   
     if (GL.#canvas.width !== width || GL.#canvas.height !== height) {
       GL.#canvas.width = width
       GL.#canvas.height = height
-    }
 
-    if (GL.#cbResize !== null) {
-      GL.#cbResize()
+      if (GL.#cbResize !== null) {
+        GL.#cbResize()
+      }
     }
   }
 
@@ -77,14 +80,14 @@ export class GL {
     GL.#createCanvas()
     GL.#createContext()
 
-    GL.#onResize()
-    addEventListener('resize', GL.#onResize)
-
     if (GL.#cbLoad !== null) {
       GL.#cbLoad()
     }
 
     document.body.appendChild(GL.#canvas)
+
+    GL.#onResize()
+    addEventListener('resize', GL.#onResize)
     
     requestAnimationFrame(GL.#renderLoop)
   }

@@ -46,7 +46,7 @@ export class Framebuffer {
   }
   
   static init(width, height) {
-    if (width === Framebuffer.#width && height === Framebuffer.#height) {
+    if (width <= 0.0 || height <= 0.0 || width === Framebuffer.#width && height === Framebuffer.#height) {
       console.debug('Framebuffer resize: Ignoring')
       return true
     }
@@ -78,6 +78,8 @@ export class Framebuffer {
 
     Framebuffer.#width = width
     Framebuffer.#height = height
+
+    console.debug(`Framebuffer: ${width} × ${height}`)
 
     GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureHDR)
     GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.R11F_G11F_B10F, width, height)

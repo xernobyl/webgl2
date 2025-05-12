@@ -77,10 +77,20 @@ const shaderPrograms = {
   }
 }
 
-class App {
+export class App {
   static #particles = null
   static #plane = null
   static #camera = new Camera(Math.PI / 2.0, 1.0, 0.1, 100.0)
+  static #frameBufferScale = 1.0
+
+  static set frameBufferScale(value) {
+    App.#frameBufferScale = value
+    App.#resize()
+  }
+
+  static get frameBufferScale() {
+    return App.#frameBufferScale
+  }
 
   static #load() {
     const compiledShader = { vertex: {}, fragment: {} }
@@ -179,7 +189,11 @@ class App {
   }
 
   static #resize() {
-    Framebuffer.init(GL.canvas.width, GL.canvas.height)
+    const scale = App.#frameBufferScale > 0.0 ? App.#frameBufferScale : 1.0
+    const fbWidth = Math.ceil(GL.canvas.width / scale)
+    const fbHeight = Math.ceil(GL.canvas.height / scale)
+
+    Framebuffer.init(fbWidth, fbHeight)
   }
 
   static #afterLoad() {
@@ -206,6 +220,10 @@ class App {
       GL.init(App.#afterLoad, App.#loop, App.#resize)
     })
   }
+}
+
+window.getApp = () => {
+  return App
 }
 
 await MIDIManager.initialize()
