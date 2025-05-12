@@ -17,11 +17,8 @@ export class StaticGeometry {
     }
     else {
       GL.gl.bindBuffer(GL.gl.ARRAY_BUFFER, StaticGeometry.#vbo)
-
-      console.log('before alignment', StaticGeometry.#lastOffset)
       const alignment = data.byteLength / data.length
       StaticGeometry.#lastOffset = Math.ceil(StaticGeometry.#lastOffset / alignment) * alignment
-      console.log('after alignment', StaticGeometry.#lastOffset)
     }
 
     GL.gl.bufferSubData(GL.gl.ARRAY_BUFFER, StaticGeometry.#lastOffset, data)
@@ -30,7 +27,7 @@ export class StaticGeometry {
     StaticGeometry.#lastOffset += data.byteLength
 
     if (SIZE_IN_MB * 1048576 < StaticGeometry.#lastOffset) {
-      console.log(`WARNING: INCREASE MAX SIZE TO ${StaticGeometry.#lastOffset}`)
+      console.warn(`WARNING: INCREASE MAX SIZE TO ${StaticGeometry.#lastOffset}`)
     }
 
     return offset
@@ -51,11 +48,8 @@ export class StaticGeometry {
     }
     else {
       GL.gl.bindBuffer(GL.gl.ELEMENT_ARRAY_BUFFER, StaticGeometry.#ebo)
-
-      console.log('before alignment', StaticGeometry.#lastElementOffset)
       const alignment = data.byteLength / data.length
       StaticGeometry.#lastElementOffset = Math.ceil(StaticGeometry.#lastElementOffset / alignment) * alignment
-      console.log('after alignment', StaticGeometry.#lastElementOffset)
     }
 
     GL.gl.bufferSubData(GL.gl.ELEMENT_ARRAY_BUFFER, StaticGeometry.#lastElementOffset, data)
@@ -64,7 +58,7 @@ export class StaticGeometry {
     StaticGeometry.#lastElementOffset += data.byteLength
 
     if (ELEMENT_SIZE_IN_MB * 1048576 < StaticGeometry.#lastElementOffset) {
-      console.log(`WARNING: INCREASE MAX SIZE TO ${StaticGeometry.#lastElementOffset}`)
+      console.warn(`WARNING: INCREASE MAX SIZE TO ${StaticGeometry.#lastElementOffset}`)
     }
 
     return offset
