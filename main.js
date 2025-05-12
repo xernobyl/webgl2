@@ -15,14 +15,16 @@ const shaderSource = {
     test: 'test.vs.glsl',
     particleBasic: 'particleBasic.vs.glsl',
     flat: 'flat.vs.glsl',
-    plane: 'plane.vs.glsl'
+    plane: 'plane.vs.glsl',
+    taa: 'taa.vs.glsl'
   },
   fragment: {
     test: 'test.fs.glsl',
     particleFlat: 'particleFlat.fs.glsl',
     flat: 'flat.fs.glsl',
     color: 'color.fs.glsl',
-    plane: 'plane.fs.glsl'
+    plane: 'plane.fs.glsl',
+    taa: 'taa.fs.glsl'
   }
 }
 
@@ -73,6 +75,16 @@ const shaderPrograms = {
       'mv': null,
       'color': null,
       'bias': null
+    }
+  },
+
+  taa: {
+    'fragment': ['taa'],
+    'vertex': ['taa'],
+    'uniforms': {
+      'screen': null,
+      'motion': null,
+      'accum': null
     }
   }
 }
@@ -217,6 +229,8 @@ export class App {
     ResourceManager.add('fragment_flat', 'shaders/flat.fs.glsl')
     ResourceManager.add('fragment_color', 'shaders/color.fs.glsl')
     ResourceManager.add('fragment_plane', 'shaders/plane.fs.glsl')
+    ResourceManager.add('vertex_taa', 'shaders/taa.vs.glsl')
+    ResourceManager.add('fragment_taa', 'shaders/taa.fs.glsl')
     ResourceManager.onAllLoaded(() => {
       console.info('All resources loaded...')
       GL.init(App.#afterLoad, App.#loop, App.#resize)
