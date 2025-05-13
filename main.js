@@ -12,14 +12,14 @@ import { GL } from './gl.js'
 
 const shaderSource = {
   vertex: {
-    test: 'test.vs.glsl',
+    screen: 'screen.vs.glsl',
     particleBasic: 'particleBasic.vs.glsl',
     flat: 'flat.vs.glsl',
     plane: 'plane.vs.glsl',
     taa: 'taa.vs.glsl'
   },
   fragment: {
-    test: 'test.fs.glsl',
+    screen: 'screen.fs.glsl',
     particleFlat: 'particleFlat.fs.glsl',
     flat: 'flat.fs.glsl',
     color: 'color.fs.glsl',
@@ -29,9 +29,9 @@ const shaderSource = {
 }
 
 const shaderPrograms = {
-  test: {
-    'fragment': ['test'],
-    'vertex': ['test'],
+  screen: {
+    'fragment': ['screen'],
+    'vertex': ['screen'],
     'uniforms': {
       'screen_size': null,
       'inverse_screen_size': null,
@@ -143,6 +143,8 @@ export class App {
   }
 
   static #loop() {
+    // Updates //
+
     App.#camera.aspect = GL.canvas.offsetWidth / GL.canvas.offsetHeight
     //camera.focalLength = 8.0
     App.#camera.updateProjection()
@@ -153,9 +155,15 @@ export class App {
     //camera.lookAt(vec3.fromValues(0.0, 0.0, -5.0), vec3.fromValues(0.0, 0.0, 0.0), vec3.fromValues(0.0, 1.0, 0.0))
     App.#camera.update()
 
-    Framebuffer.bind()
+    // Render //
+
+    // 1st pass
+
+    Framebuffer.beginRenderPass()
     GL.gl.clearColor(1.0, 1.0, 1.0, 0.0)
     GL.gl.clear(GL.gl.COLOR_BUFFER_BIT | GL.gl.DEPTH_BUFFER_BIT)
+
+    // draw plane
 
     GL.gl.enable(GL.gl.DEPTH_TEST)
     GL.gl.enable(GL.gl.CULL_FACE)
@@ -166,6 +174,8 @@ export class App {
     App.#plane.draw()
     GL.gl.disable(GL.gl.CULL_FACE)
 
+    // draw cube
+    
     GL.gl.useProgram(shaderPrograms['color'].program)
     GL.gl.uniformMatrix4fv(shaderPrograms['color'].uniforms['mvp'], false, App.#camera.mvp)
     GL.gl.uniformMatrix4fv(shaderPrograms['color'].uniforms['mv'], false, App.#camera.view)
@@ -173,7 +183,7 @@ export class App {
     Cube.drawOutlines()
     GL.gl.disable(GL.gl.DEPTH_TEST)
 
-    GL.gl.disable(GL.gl.SCISSOR_TEST)
+    // draw particles
 
     GL.gl.enable(GL.gl.BLEND)
     GL.gl.blendFunc(GL.gl.ONE, GL.gl.ONE_MINUS_SRC_ALPHA)
@@ -183,20 +193,41 @@ export class App {
     App.#particles.draw()
     GL.gl.disable(GL.gl.BLEND)
 
-    //
+    Framebuffer.endRenderPass()
+
+    // temporal anti-aliasing
+
+    Framebuffer.beginTemporalAAPass()
+
+    GL.gl.activeTexture(GL.gl.TEXTURE0)
+    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureHDR)
+    GL.gl.activeTexture(GL.gl.TEXTURE1)
+    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureHDR)
+    GL.gl.activeTexture(GL.gl.TEXTURE2)
+    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureAccum)
+
+    GL.gl.useProgram(shaderPrograms['taa'].program)
+    GL.gl.uniform1i(shaderPrograms['taa'].uniforms['screen'], 0)
+    GL.gl.uniform1i(shaderPrograms['taa'].uniforms['motion'], 1)
+    GL.gl.uniform1i(shaderPrograms['taa'].uniforms['accum'], 2)
+    Quad.draw()
+
+    Framebuffer.endTemporalAAPass()
+
+    // screen pass
 
     GL.gl.bindFramebuffer(GL.gl.FRAMEBUFFER, null)
     GL.gl.drawBuffers([GL.gl.BACK])
     GL.gl.viewport(0.0, 0.0, GL.canvas.width, GL.canvas.height)
 
     GL.gl.activeTexture(GL.gl.TEXTURE0)
-    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureHDR)
+    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureTAA)
 
-    GL.gl.useProgram(shaderPrograms['test'].program)
-    GL.gl.uniform1f(shaderPrograms['test'].uniforms['time'], GL.time)
-    GL.gl.uniform2f(shaderPrograms['test'].uniforms['inverse_screen_size'], 1.0 / GL.canvas.width, 1.0 / GL.canvas.height)
-    GL.gl.uniform2f(shaderPrograms['test'].uniforms['screen_size'], GL.canvas.width, GL.canvas.height)
-    GL.gl.uniform1i(shaderPrograms['test'].uniforms['screen'], 0)
+    GL.gl.useProgram(shaderPrograms['screen'].program)
+    GL.gl.uniform1f(shaderPrograms['screen'].uniforms['time'], GL.time)
+    GL.gl.uniform2f(shaderPrograms['screen'].uniforms['inverse_screen_size'], 1.0 / GL.canvas.width, 1.0 / GL.canvas.height)
+    GL.gl.uniform2f(shaderPrograms['screen'].uniforms['screen_size'], GL.canvas.width, GL.canvas.height)
+    GL.gl.uniform1i(shaderPrograms['screen'].uniforms['screen'], 0)
     Quad.draw()
   }
 
@@ -220,11 +251,11 @@ export class App {
   }
 
   static init() {
-    ResourceManager.add('vertex_test', 'shaders/test.vs.glsl')
+    ResourceManager.add('vertex_screen', 'shaders/screen.vs.glsl')
     ResourceManager.add('vertex_particleBasic', 'shaders/particleBasic.vs.glsl')
     ResourceManager.add('vertex_flat', 'shaders/flat.vs.glsl')
     ResourceManager.add('vertex_plane', 'shaders/plane.vs.glsl')
-    ResourceManager.add('fragment_test', 'shaders/test.fs.glsl')
+    ResourceManager.add('fragment_screen', 'shaders/screen.fs.glsl')
     ResourceManager.add('fragment_particleFlat', 'shaders/particleFlat.fs.glsl')
     ResourceManager.add('fragment_flat', 'shaders/flat.fs.glsl')
     ResourceManager.add('fragment_color', 'shaders/color.fs.glsl')

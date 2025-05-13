@@ -4,6 +4,7 @@ export class GL {
   static #frame = 0
   static #time = 0.0        // milliseconds
   static #timeOffset = 0.0  // milliseconds
+  static #frameDuration     // milliseconds
   static #cbLoad = null
   static #cbLoop = null
   static #cbResize = null
@@ -59,15 +60,24 @@ export class GL {
     }
   }
 
+  static #logStats() {
+    console.log(`Frames: ${GL.#frame}`)
+    console.log(`FPS: ${100000.0 / GL.#frameDuration}`)
+  }
+
   static #renderLoop(frameTime) {
     if (GL.#frame === 0) {
       GL.#timeOffset = frameTime
     }
     
-    // const oldTime = time
+    const previousTime = GL.#time
     GL.#time = frameTime - GL.#timeOffset
-    // const dt = (frameTime - oldTime)
+    GL.#frameDuration = (frameTime - previousTime)
 
+    if (GL.#frame % 120 === 119) {
+      GL.#logStats()
+    }
+    
     GL.#cbLoop()
 
     ++GL.#frame

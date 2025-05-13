@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 /* eslint-disable max-lines-per-function */
 import { GL } from './gl.js'
 
@@ -157,25 +158,24 @@ export class Framebuffer {
     return true
   }
 
-  static bind(width=0, height=0) {
+  static beginRenderPass() {
     this.#frameCounter = (this.#frameCounter + 1) % 3
     
-    const useScisor = width !== 0 || height !== 0
-    
-    if (width === 0) {
-      width = Framebuffer.#width
-    }
-
-    if (height === 0) {
-      height = Framebuffer.#height
-    }
-
     GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebuffer[this.#frameCounter])
-    GL.gl.viewport(0, 0, width, height)
-    if (useScisor) {
-      GL.gl.scissor(0, 0, width, height)
-      GL.gl.enable(GL.gl.SCISSOR_TEST)
-    }
+    GL.gl.viewport(0, 0, Framebuffer.#width, Framebuffer.#height)
+  }
+
+  static endRenderPass() {
+
+  }
+
+  static beginTemporalAAPass() {
+    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebuffer[(this.#frameCounter + 2) % 3])
+    GL.gl.viewport(0, 0, Framebuffer.#width, Framebuffer.#height)
+  }
+
+  static endTemporalAAPass() {
+    
   }
 
   static get width() {
@@ -192,6 +192,14 @@ export class Framebuffer {
 
   static get textureAccum() {
     return Framebuffer.#textureHDR[(this.#frameCounter + 1) % 3]
+  }
+
+  static get textureTAA() {
+    return Framebuffer.#textureHDR[(this.#frameCounter + 2) % 3]
+  }
+
+  static get textureMotion() {
+    return Framebuffer.#textureMotion
   }
 
   static get textureHDRHalf() {
