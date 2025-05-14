@@ -6,88 +6,9 @@ import { Cube } from './cube.js'
 import { TessPlane } from './tessplane.js'
 import { Particles } from './particles.js'
 import { MIDIManager } from './midi.js'
-import { compileShader, linkProgram } from './shaders.js'
+import { Shaders } from './shaders.js'
 import { ResourceManager } from './resourcemanager.js'
 import { GL } from './gl.js'
-
-const shaderSource = {
-  vertex: {
-    screen: 'screen.vs.glsl',
-    particleBasic: 'particleBasic.vs.glsl',
-    flat: 'flat.vs.glsl',
-    plane: 'plane.vs.glsl',
-    taa: 'taa.vs.glsl'
-  },
-  fragment: {
-    screen: 'screen.fs.glsl',
-    particleFlat: 'particleFlat.fs.glsl',
-    flat: 'flat.fs.glsl',
-    color: 'color.fs.glsl',
-    plane: 'plane.fs.glsl',
-    taa: 'taa.fs.glsl'
-  }
-}
-
-const shaderPrograms = {
-  screen: {
-    'fragment': ['screen'],
-    'vertex': ['screen'],
-    'uniforms': {
-      'screen_size': null,
-      'inverse_screen_size': null,
-      'time': null,
-      'screen': null
-    }
-  },
-
-  particles0: {
-    'fragment': ['particleFlat'],
-    'vertex': ['particleBasic'],
-    'uniforms': {
-      'mvp': null
-    }
-  },
-
-  flat: {
-    'fragment': ['flat'],
-    'vertex': ['flat'],
-    'uniforms': {
-      'mvp': null,
-      'mv': null
-    }
-  },
-
-  color: {
-    'fragment': ['color'],
-    'vertex': ['flat'],
-    'uniforms': {
-      'mvp': null,
-      'mv': null,
-      'color': null
-    }
-  },
-
-  plane: {
-    'fragment': ['plane'],
-    'vertex': ['plane'],
-    'uniforms': {
-      'mvp': null,
-      'mv': null,
-      'color': null,
-      'bias': null
-    }
-  },
-
-  taa: {
-    'fragment': ['taa'],
-    'vertex': ['taa'],
-    'uniforms': {
-      'screen': null,
-      'motion': null,
-      'accum': null
-    }
-  }
-}
 
 export class App {
   static #particles = null
@@ -105,33 +26,8 @@ export class App {
   }
 
   static #load() {
-    const compiledShader = { vertex: {}, fragment: {} }
-
-    for (const shaderType in shaderSource) {
-      for (const name in shaderSource[shaderType]) {
-        const source = ResourceManager.get(`${shaderType}_${name}`)
-        compiledShader[shaderType][name] = compileShader(source, shaderType)
-      }
-    }
-
-    for (const program in shaderPrograms) {
-      const shaders = []
-      for (const shaderType in shaderSource) {
-        for (const shader in shaderPrograms[program][shaderType]) {
-          shaders.push(compiledShader[shaderType][shaderPrograms[program][shaderType][shader]])
-        }
-      }
-
-      shaderPrograms[program].program = linkProgram(shaders, program.varyings)
-      if (!shaderPrograms[program].program) {
-        return false
-      }
-
-      for (const uniform in shaderPrograms[program].uniforms) {
-        shaderPrograms[program].uniforms[uniform] = GL.gl.getUniformLocation(shaderPrograms[program].program, uniform)
-      }
-    }
-
+    console.log('Compiling shaders...')
+    Shaders.init()
     console.log('LOADING THINGS')
 
     Quad.init()
@@ -167,19 +63,19 @@ export class App {
 
     GL.gl.enable(GL.gl.DEPTH_TEST)
     GL.gl.enable(GL.gl.CULL_FACE)
-    GL.gl.useProgram(shaderPrograms['plane'].program)
-    GL.gl.uniformMatrix4fv(shaderPrograms['plane'].uniforms['mvp'], false, App.#camera.mvp)
-    GL.gl.uniformMatrix4fv(shaderPrograms['plane'].uniforms['mv'], false, App.#camera.view)
-    GL.gl.uniform2f(shaderPrograms['plane'].uniforms['bias'], MIDIManager.getSliderValue(1), MIDIManager.getSliderValue(2))
+    Shaders.useProgram('plane')
+    GL.gl.uniformMatrix4fv(Shaders.uniform('plane', 'mvp'), false, App.#camera.mvp)
+    GL.gl.uniformMatrix4fv(Shaders.uniform('plane', 'mv'), false, App.#camera.view)
+    GL.gl.uniform2f(Shaders.uniform('plane', 'bias'), MIDIManager.getSliderValue(1), MIDIManager.getSliderValue(2))
     App.#plane.draw()
     GL.gl.disable(GL.gl.CULL_FACE)
 
     // draw cube
     
-    GL.gl.useProgram(shaderPrograms['color'].program)
-    GL.gl.uniformMatrix4fv(shaderPrograms['color'].uniforms['mvp'], false, App.#camera.mvp)
-    GL.gl.uniformMatrix4fv(shaderPrograms['color'].uniforms['mv'], false, App.#camera.view)
-    GL.gl.uniform4f(shaderPrograms['color'].uniforms['color'], 0.0, 0.0, 0.0, 0.0)
+    Shaders.useProgram('color')
+    GL.gl.uniformMatrix4fv(Shaders.uniform('color', 'mvp'), false, App.#camera.mvp)
+    GL.gl.uniformMatrix4fv(Shaders.uniform('color', 'mv'), false, App.#camera.view)
+    GL.gl.uniform4f(Shaders.uniform('color', 'color'), 0.0, 0.0, 0.0, 0.0)
     Cube.drawOutlines()
     GL.gl.disable(GL.gl.DEPTH_TEST)
 
@@ -188,8 +84,8 @@ export class App {
     GL.gl.enable(GL.gl.BLEND)
     GL.gl.blendFunc(GL.gl.ONE, GL.gl.ONE_MINUS_SRC_ALPHA)
     // gl.blendFunc(gl.ONE, gl.ONE)
-    GL.gl.useProgram(shaderPrograms['particles0'].program)
-    GL.gl.uniformMatrix4fv(shaderPrograms['particles0'].uniforms['mvp'], false, App.#camera.mvp)
+    Shaders.useProgram('particles0')
+    GL.gl.uniformMatrix4fv(Shaders.uniform('particles0', 'mvp'), false, App.#camera.mvp)
     App.#particles.draw()
     GL.gl.disable(GL.gl.BLEND)
 
@@ -206,10 +102,11 @@ export class App {
     GL.gl.activeTexture(GL.gl.TEXTURE2)
     GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureAccum)
 
-    GL.gl.useProgram(shaderPrograms['taa'].program)
-    GL.gl.uniform1i(shaderPrograms['taa'].uniforms['screen'], 0)
-    GL.gl.uniform1i(shaderPrograms['taa'].uniforms['motion'], 1)
-    GL.gl.uniform1i(shaderPrograms['taa'].uniforms['accum'], 2)
+    Shaders.useProgram('taa')
+    GL.gl.uniform1i(Shaders.uniform('taa', 'screen'), 0)
+    GL.gl.uniform1i(Shaders.uniform('taa', 'motion'), 1)
+    GL.gl.uniform1i(Shaders.uniform('taa', 'accum'), 2)
+    GL.gl.uniform2f(Shaders.uniform('taa', 'iTexel'), 1.0 / Framebuffer.width, 1.0 / Framebuffer.height)
     Quad.draw()
 
     Framebuffer.endTemporalAAPass()
@@ -223,11 +120,11 @@ export class App {
     GL.gl.activeTexture(GL.gl.TEXTURE0)
     GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureTAA)
 
-    GL.gl.useProgram(shaderPrograms['screen'].program)
-    GL.gl.uniform1f(shaderPrograms['screen'].uniforms['time'], GL.time)
-    GL.gl.uniform2f(shaderPrograms['screen'].uniforms['inverse_screen_size'], 1.0 / GL.canvas.width, 1.0 / GL.canvas.height)
-    GL.gl.uniform2f(shaderPrograms['screen'].uniforms['screen_size'], GL.canvas.width, GL.canvas.height)
-    GL.gl.uniform1i(shaderPrograms['screen'].uniforms['screen'], 0)
+    Shaders.useProgram('screen')
+    GL.gl.uniform1f(Shaders.uniform('screen', 'time'), GL.time)
+    GL.gl.uniform2f(Shaders.uniform('screen', 'inverse_screen_size'), 1.0 / GL.canvas.width, 1.0 / GL.canvas.height)
+    GL.gl.uniform2f(Shaders.uniform('screen', 'screen_size'), GL.canvas.width, GL.canvas.height)
+    GL.gl.uniform1i(Shaders.uniform('screen', 'screen'), 0)
     Quad.draw()
   }
 
@@ -251,17 +148,12 @@ export class App {
   }
 
   static init() {
-    ResourceManager.add('vertex_screen', 'shaders/screen.vs.glsl')
-    ResourceManager.add('vertex_particleBasic', 'shaders/particleBasic.vs.glsl')
-    ResourceManager.add('vertex_flat', 'shaders/flat.vs.glsl')
-    ResourceManager.add('vertex_plane', 'shaders/plane.vs.glsl')
-    ResourceManager.add('fragment_screen', 'shaders/screen.fs.glsl')
-    ResourceManager.add('fragment_particleFlat', 'shaders/particleFlat.fs.glsl')
-    ResourceManager.add('fragment_flat', 'shaders/flat.fs.glsl')
-    ResourceManager.add('fragment_color', 'shaders/color.fs.glsl')
-    ResourceManager.add('fragment_plane', 'shaders/plane.fs.glsl')
-    ResourceManager.add('vertex_taa', 'shaders/taa.vs.glsl')
-    ResourceManager.add('fragment_taa', 'shaders/taa.fs.glsl')
+    // Get list of used shaders
+    const shaderResources = Shaders.getShaderResources()
+    for (const name in shaderResources) {
+      ResourceManager.add(name, shaderResources[name])
+    }
+
     ResourceManager.onAllLoaded(() => {
       console.info('All resources loaded...')
       GL.init(App.#afterLoad, App.#loop, App.#resize)
