@@ -1,6 +1,3 @@
-#version 300 es
-precision highp int;
-precision highp float;
 layout(location = 0) in vec2 a0;
 out vec2 p;
 

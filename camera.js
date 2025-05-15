@@ -3,6 +3,11 @@ import { mat4 } from './gl-matrix/index.js'
 export class Camera {
   #jitterX
   #jitterY
+
+  #projection
+  #mvp
+  #view
+  #inverseView
   
   constructor(fov = Math.PI / 2.0, aspect = 1.0, near = 0.1, far = Infinity) {
     this.fov = fov
@@ -13,9 +18,26 @@ export class Camera {
     this.#jitterX = 0
     this.#jitterY = 0
 
-    this.projection = mat4.create()
-    this.mvp = mat4.create()
-    this.view = mat4.create()
+    this.#projection = mat4.create()
+    this.#mvp = mat4.create()
+    this.#view = mat4.create()
+    this.#inverseView = mat4.create()
+  }
+
+  get projection() {
+    return this.#projection
+  }
+  
+  get mvp() {
+    return this.#mvp
+  }
+  
+  get view() {
+    return this.#view
+  }
+  
+  get inverseView() {
+    return this.#inverseView
   }
 
   setJitter(x, y) {
@@ -33,20 +55,21 @@ export class Camera {
   }
 
   lookAt(position, target, up) {
-    mat4.lookAt(this.view, position, target, up)
+    mat4.lookAt(this.#view, position, target, up)
+    mat4.invert(this.#inverseView, this.#view)
   }
 
   updateProjection() {
-    mat4.perspective(this.projection, this.fov, this.aspect, this.near, this.far)
+    mat4.perspective(this.#projection, this.fov, this.aspect, this.near, this.far)
 
     if (this.#jitterX !== 0 || this.#jitterY !== 0) {
-      this.projection[8] += this.#jitterX * 2.0 // Column 2, row 0 (x)
-      this.projection[9] += this.#jitterY * 2.0 // Column 2, row 1 (y)
+      this.#projection[8] += this.#jitterX * 2.0 // Column 2, row 0 (x)
+      this.#projection[9] += this.#jitterY * 2.0 // Column 2, row 1 (y)
     }
   }
 
   update() {
-    mat4.multiply(this.mvp, this.projection, this.view)
+    mat4.multiply(this.#mvp, this.#projection, this.#view)
   }
 
   /*set focalLength(mm) {

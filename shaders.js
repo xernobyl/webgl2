@@ -3,8 +3,13 @@ import { ResourceManager } from './resourcemanager.js'
 
 const shaderTypes = {
   'fragment': 'fs',
-  'vertex': 'vs',
+  'vertex': 'vs'
 }
+
+const shaderHeader =
+`#version 300 es
+precision highp int;
+precision highp float;`
 
 export class Shaders {
   static #shaderPrograms = {
@@ -66,6 +71,15 @@ export class Shaders {
         'samplerPrevious': null,
         'iTexel': null
       }
+    },
+
+    scene1: {
+      'fragment': ['scene1'],
+      'vertex': ['scene1'],
+      'uniforms': {
+        'inverseViewMatrix': null,
+        'time': null
+      }
     }
   }
 
@@ -82,8 +96,6 @@ export class Shaders {
         }
       }
     }
-
-    console.log(output)
     
     return output
   }
@@ -123,6 +135,8 @@ export class Shaders {
   }
 
   static #compileShader(shaderSource, shaderType) {
+    shaderSource = `${shaderHeader}\n\n${shaderSource}`
+
     if (shaderType === 'vertex') {
       shaderType = GL.gl.VERTEX_SHADER
     } else if (shaderType === 'fragment') {

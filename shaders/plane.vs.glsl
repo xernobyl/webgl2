@@ -1,4 +1,3 @@
-#version 300 es
 layout(location = 0) in highp vec3 position;
 out highp vec3 pos;
 uniform highp mat4 mvp, mv;

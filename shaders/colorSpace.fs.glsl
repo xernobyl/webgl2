@@ -1,5 +1,3 @@
-#version 300 es
-precision highp float;
 vec3 LinearTosRGB(vec3 c) {
   return vec3(
     c.r <= 0.0031308 ? 12.92 * c.r : 1.055 * pow(c.r, 1.0 / 2.4) - 0.055,

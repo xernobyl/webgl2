@@ -1,6 +1,3 @@
-#version 300 es
-precision highp int;
-precision highp float;
 layout(location = 0) out lowp vec4 frag_color;
 uniform sampler2D samplerCurrent;
 uniform sampler2D samplerMotion;
