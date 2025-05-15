@@ -1,6 +1,11 @@
 import { GL } from './gl.js'
 import { ResourceManager } from './resourcemanager.js'
 
+const shaderTypes = {
+  'fragment': 'fs',
+  'vertex': 'vs',
+}
+
 export class Shaders {
   static #shaderPrograms = {
     screen: {
@@ -64,32 +69,21 @@ export class Shaders {
     }
   }
 
-  static #shaderSource = {
-    vertex: {
-      screen: 'screen.vs.glsl',
-      particleBasic: 'particleBasic.vs.glsl',
-      flat: 'flat.vs.glsl',
-      plane: 'plane.vs.glsl',
-      taa: 'taa.vs.glsl'
-    },
-    fragment: {
-      screen: 'screen.fs.glsl',
-      particleFlat: 'particleFlat.fs.glsl',
-      flat: 'flat.fs.glsl',
-      color: 'color.fs.glsl',
-      plane: 'plane.fs.glsl',
-      taa: 'taa.fs.glsl'
-    }
-  }
-
   static getShaderResources() {
     const output = {}
 
-    for (const type in Shaders.#shaderSource) {
-      for (const name in Shaders.#shaderSource[type]) {
-        output[`${type}_${name}`] = `shaders/${Shaders.#shaderSource[type][name]}`
+    for (const programName in Shaders.#shaderPrograms) {
+      const program = Shaders.#shaderPrograms[programName]
+      for (const type in shaderTypes) {
+        program[`${type}UrL`] = []
+        for (const shaderName of program[type]) {
+          const url = `shaders/${shaderName}.${shaderTypes[type]}.glsl`
+          output[`${type}_${shaderName}`] = url
+        }
       }
     }
+
+    console.log(output)
     
     return output
   }
@@ -151,17 +145,23 @@ export class Shaders {
 
   static init() {
     const compiledShader = { vertex: {}, fragment: {} }
-    
-    for (const shaderType in Shaders.#shaderSource) {
-      for (const name in Shaders.#shaderSource[shaderType]) {
-        const source = ResourceManager.get(`${shaderType}_${name}`)
-        compiledShader[shaderType][name] = Shaders.#compileShader(source, shaderType)
+
+    for (const programName in Shaders.#shaderPrograms) {
+      const program = Shaders.#shaderPrograms[programName]
+      for (const shaderType in shaderTypes) {
+        for (const shaderName of program[shaderType]) {
+          if (shaderName in compiledShader[shaderType]) {
+            continue
+          }
+
+          compiledShader[shaderType][shaderName] = Shaders.#compileShader(ResourceManager.get(`${shaderType}_${shaderName}`), shaderType)
+        }
       }
     }
-
+    
     for (const program in Shaders.#shaderPrograms) {
       const shaders = []
-      for (const shaderType in Shaders.#shaderSource) {
+      for (const shaderType in shaderTypes) {
         for (const shader in Shaders.#shaderPrograms[program][shaderType]) {
           shaders.push(compiledShader[shaderType][Shaders.#shaderPrograms[program][shaderType][shader]])
         }
