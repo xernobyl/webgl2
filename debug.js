@@ -128,7 +128,7 @@ const createFloatingConsole = () => {
   // Input handling
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
-      const val = input.value.trim()
+      const val = input.value.trim().toLowerCase()
       if (val) {
         runCommand(val)
         input.value = ''
@@ -141,7 +141,7 @@ const createFloatingConsole = () => {
     if (typeof name !== 'string' || typeof fn !== 'function') {
       throw new Error('Usage: registerCommand("name", function)')
     }
-    commands.set(name, fn)
+    commands.set(name.toLowerCase(), fn)
     console.log(`Registered command: ${name}`)
   }
 }

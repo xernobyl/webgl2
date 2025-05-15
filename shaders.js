@@ -56,9 +56,9 @@ export class Shaders {
       'fragment': ['taa'],
       'vertex': ['taa'],
       'uniforms': {
-        'screen': null,
-        'motion': null,
-        'accum': null,
+        'samplerCurrent': null,
+        'samplerMotion': null,
+        'samplerPrevious': null,
         'iTexel': null
       }
     }

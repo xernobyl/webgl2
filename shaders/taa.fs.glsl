@@ -2,9 +2,9 @@
 precision highp int;
 precision highp float;
 layout(location = 0) out lowp vec4 frag_color;
-uniform sampler2D screen;
-uniform sampler2D motion;
-uniform sampler2D accum;
+uniform sampler2D samplerCurrent;
+uniform sampler2D samplerMotion;
+uniform sampler2D samplerPrevious;
 uniform vec2 iTexel;
 in vec2 p;
 
@@ -13,8 +13,9 @@ float luma(vec3 col) {
 }
 
 void main() {
-  vec3 current = texture(screen, p).rgb;
-  vec3 previous = texture(accum, p).rgb;
+  vec3 current = texture(samplerCurrent, p).rgb;
+  vec2 motion = texture(samplerMotion, p).xy;
+  vec3 previous = texture(samplerPrevious, p).rgb;
 
   // Neighborhood clamping
   vec3 minCol = current;
@@ -23,8 +24,8 @@ void main() {
   for (float y = -1.0; y <= 1.0; y += 1.0) {
     for (float x = -1.0; x <= 1.0; x += 1.0) {
       vec2 c = p + iTexel * vec2(x, y);
-      minCol = min(minCol, texture(screen, c).rgb);
-      maxCol = max(maxCol, texture(screen, c).rgb);
+      minCol = min(minCol, texture(samplerCurrent, c).rgb);
+      maxCol = max(maxCol, texture(samplerCurrent, c).rgb);
     }
   }
 

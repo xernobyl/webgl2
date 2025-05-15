@@ -1,15 +1,34 @@
 import { mat4 } from './gl-matrix/index.js'
 
 export class Camera {
+  #jitterX
+  #jitterY
+  
   constructor(fov = Math.PI / 2.0, aspect = 1.0, near = 0.1, far = Infinity) {
     this.fov = fov
     this.aspect = aspect
     this.near = near
     this.far = far
+      
+    this.#jitterX = 0
+    this.#jitterY = 0
 
     this.projection = mat4.create()
     this.mvp = mat4.create()
     this.view = mat4.create()
+  }
+
+  setJitter(x, y) {
+    this.#jitterX = x
+    this.#jitterY = y
+
+    this.updateProjection()
+  }
+
+  clearJitter() {
+    this.#jitterX = 0
+    this.#jitterY = 0
+
     this.updateProjection()
   }
 
@@ -19,6 +38,11 @@ export class Camera {
 
   updateProjection() {
     mat4.perspective(this.projection, this.fov, this.aspect, this.near, this.far)
+
+    if (this.#jitterX !== 0 || this.#jitterY !== 0) {
+      this.projection[8] += this.#jitterX * 2.0 // Column 2, row 0 (x)
+      this.projection[9] += this.#jitterY * 2.0 // Column 2, row 1 (y)
+    }
   }
 
   update() {

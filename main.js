@@ -9,12 +9,16 @@ import { MIDIManager } from './midi.js'
 import { Shaders } from './shaders.js'
 import { ResourceManager } from './resourcemanager.js'
 import { GL } from './gl.js'
+import { haltonSequence2D } from './shaders/utils.js'
+
+const jitterSize = 8
 
 export class App {
   static #particles = null
   static #plane = null
   static #camera = new Camera(Math.PI / 2.0, 1.0, 0.1, 100.0)
   static #frameBufferScale = 1.0
+  static #jitterPattern
 
   static set frameBufferScale(value) {
     App.#frameBufferScale = value
@@ -23,6 +27,13 @@ export class App {
 
   static get frameBufferScale() {
     return App.#frameBufferScale
+  }
+
+  static #getJitterOffset() {
+    const x = App.#jitterPattern[(GL.frame % jitterSize) * 2 + 0]
+    const y = App.#jitterPattern[(GL.frame % jitterSize) * 2 + 1]
+  
+    return [x / Framebuffer.width, y / Framebuffer.height]
   }
 
   static #load() {
@@ -35,6 +46,8 @@ export class App {
     App.#plane = new TessPlane(9)
     App.#particles = new Particles(50000)
 
+    App.#jitterPattern = haltonSequence2D(jitterSize)
+
     return true
   }
 
@@ -43,7 +56,10 @@ export class App {
 
     App.#camera.aspect = GL.canvas.offsetWidth / GL.canvas.offsetHeight
     //camera.focalLength = 8.0
-    App.#camera.updateProjection()
+
+    const [jitterX, jitterY] = App.#getJitterOffset()
+    App.#camera.setJitter(jitterX, jitterY)
+
     App.#camera.lookAt(
       vec3.fromValues(Math.cos(GL.time / 1000.0 * 0.1) * 2.5, 1.25, Math.sin(GL.time / 1000.0 * 0.1) * 2.5),
       vec3.fromValues(0.0, 0.0, 0.0), vec3.fromValues(0.0, 1.0, 0.0)
@@ -81,6 +97,7 @@ export class App {
 
     // draw particles
 
+    /*
     GL.gl.enable(GL.gl.BLEND)
     GL.gl.blendFunc(GL.gl.ONE, GL.gl.ONE_MINUS_SRC_ALPHA)
     // gl.blendFunc(gl.ONE, gl.ONE)
@@ -88,6 +105,7 @@ export class App {
     GL.gl.uniformMatrix4fv(Shaders.uniform('particles0', 'mvp'), false, App.#camera.mvp)
     App.#particles.draw()
     GL.gl.disable(GL.gl.BLEND)
+    */
 
     Framebuffer.endRenderPass()
 
@@ -103,9 +121,9 @@ export class App {
     GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureAccum)
 
     Shaders.useProgram('taa')
-    GL.gl.uniform1i(Shaders.uniform('taa', 'screen'), 0)
-    GL.gl.uniform1i(Shaders.uniform('taa', 'motion'), 1)
-    GL.gl.uniform1i(Shaders.uniform('taa', 'accum'), 2)
+    GL.gl.uniform1i(Shaders.uniform('taa', 'samplerCurrent'), 0)
+    GL.gl.uniform1i(Shaders.uniform('taa', 'samplerMotion'), 1)
+    GL.gl.uniform1i(Shaders.uniform('taa', 'samplerPrevious'), 2)
     GL.gl.uniform2f(Shaders.uniform('taa', 'iTexel'), 1.0 / Framebuffer.width, 1.0 / Framebuffer.height)
     Quad.draw()
 

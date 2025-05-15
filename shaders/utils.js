@@ -11,11 +11,10 @@ export function haltonSequence2D(count, base1 = 2, base2 = 3) {
     return result
   }
 
-  const points = []
+  const points = new Array(count * 2)
   for (let i = 1; i <= count; i++) {
-    const x = halton(i, base1)
-    const y = halton(i, base2)
-    points.push(x, y)
+    points[i * 2 - 2] = halton(i, base1)
+    points[i * 2 - 1] = halton(i, base2)
   }
 
   return points
