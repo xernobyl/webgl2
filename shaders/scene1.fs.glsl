@@ -1,4 +1,9 @@
 uniform mat4 inverseViewMatrix;
+uniform float time;
+uniform vec2 resolution;
+
+layout(location = 0) out mediump vec4 outColor;
+layout(location = 1) out highp vec2 outMotion;
 
 const float loop_duration = 30.0;
 float sTime;
@@ -71,7 +76,7 @@ float tunnel_thing(vec3 p, float depth_offset, float angular_offset, out vec3 co
   float z = round((p.z + depth_offset) / depth_spacing) * depth_spacing - depth_offset;
   vec3 center = vec3(theta * cos(alpha), theta * sin(alpha), z);
   
-  float l = hash13(0.05 * vec3(center.xy, fract(center.z / depth_loop) * depth_loop));
+  float l = hash1(0.05 * vec3(center.xy, fract(center.z / depth_loop) * depth_loop));
   
   color = colorize(theta / golden_ratio + l + sTime / loop_duration);
   
@@ -109,8 +114,8 @@ vec3 scene_normal(vec3 p, float scale) {
                    k.xxx * scene(p + k.xxx * h));
 }
 
-void mainImage(out vec4 frag_color, in vec2 frag_coord) {
-  sTime = fract(iTime / loop_duration) * loop_duration;
+void main() {
+  sTime = fract(time / loop_duration) * loop_duration;
 
   // camera movement	
   float p0 = sTime * 2.0 * pi * 3.0 / loop_duration;
@@ -130,7 +135,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord) {
   vec3 ray_origin = vec3(inverseViewMatrix[3]);
   
   int object = 0;
-  vec2 uv = (2.0 * frag_coord - iResolution.xy) / iResolution.y;
+  vec2 uv = (2.0 * gl_FragCoord.xy - resolution) / resolution.y;
   vec3 ray_dir = normalize(uv.x * cu + uv.y * cv + 1.5 * cw);
   vec3 ray_pos = ray_origin;
   float total_distance = 0.0;
@@ -154,7 +159,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord) {
   vec3 fog_color = vec3(0.125, 0.25, 0.5);
   
   if (object == 0) {
-    frag_color = vec4(sRGB(fog_color), 0.0);
+    outColor = vec4(sRGB(fog_color), 0.0);
     return;
   }
   
@@ -165,5 +170,5 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord) {
   //fog = fog * fog;
   vec3 color = vec3(1.0 - 0.33333333333 * l) * albedo + 0.5 * (1.0 - saturate(sqrt(l)));
   color = mix(fog_color, color, fog);
-  frag_color = vec4(sRGB(mix(albedo * (1.0 - l), fog_color, 1.0 - fog)), 0.0);
+  outColor = vec4(sRGB(mix(albedo * (1.0 - l), fog_color, 1.0 - fog)), 0.0);
 }

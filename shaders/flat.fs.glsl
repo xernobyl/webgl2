@@ -1,4 +1,4 @@
-layout(location = 0) out lowp vec4 frag_color;
+layout(location = 0) out mediump vec4 frag_color;
 in vec3 n;
 
 void main() {
