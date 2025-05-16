@@ -84,7 +84,10 @@ export class Shaders {
   }
 
   static getShaderResources() {
-    const output = {}
+    const output = {
+      'common_glsl': 'shaders/common.glsl',
+      'hash_glsl': 'shaders/hash.glsl'
+    }
 
     for (const programName in Shaders.#shaderPrograms) {
       const program = Shaders.#shaderPrograms[programName]
@@ -96,7 +99,7 @@ export class Shaders {
         }
       }
     }
-    
+
     return output
   }
 
@@ -134,8 +137,14 @@ export class Shaders {
     return program
   }
 
-  static #compileShader(shaderSource, shaderType) {
-    shaderSource = `${shaderHeader}\n\n${shaderSource}`
+  static #compileShader(shaderCode, shaderType) {
+    let shaderSource = shaderHeader
+    shaderSource += '\n\n'
+    shaderSource += ResourceManager.get('common_glsl')
+    shaderSource += '\n\n'
+    shaderSource += ResourceManager.get('hash_glsl')
+    shaderSource += '\n\n'
+    shaderSource += shaderCode
 
     if (shaderType === 'vertex') {
       shaderType = GL.gl.VERTEX_SHADER
@@ -148,10 +157,9 @@ export class Shaders {
     GL.gl.compileShader(shader)
 
     if (!GL.gl.getShaderParameter(shader, GL.gl.COMPILE_STATUS)) {
-      console.log(GL.gl.getShaderInfoLog(shader))
-      console.log(shaderSource)
-      GL.gl.deleteShader(shader)
-      return null
+      console.error(shaderSource)
+
+      throw new Error(GL.gl.getShaderInfoLog(shader))
     }
 
     return shader
