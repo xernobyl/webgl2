@@ -1,8 +1,10 @@
-layout(location = 0) out lowp vec4 frag_color;
+layout(location = 0) out mediump vec3 outColor;
+layout(location = 1) out highp vec2 outMotion;
 
 in vec3 n;
-uniform vec4 color;
+uniform vec3 color;
 
 void main() {
-  frag_color = color;
+  outColor = color;
+  outMotion = vec2(0.0);
 }

@@ -131,7 +131,7 @@ export class Framebuffer {
       if (!Framebuffer.#checkFramebufferStatus()) {
         return false
       }
-      GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])  // GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0, GL.gl.COLOR_ATTACHMENT1])
+      GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0, GL.gl.COLOR_ATTACHMENT1])
     }
 
     GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferHalf)
@@ -162,7 +162,9 @@ export class Framebuffer {
     this.#frameCounter = (this.#frameCounter + 1) % 3
     
     GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebuffer[this.#frameCounter])
+    GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0, GL.gl.COLOR_ATTACHMENT1])
     GL.gl.viewport(0, 0, Framebuffer.#width, Framebuffer.#height)
+    GL.gl.clear(GL.gl.DEPTH_BUFFER_BIT)
   }
 
   static endRenderPass() {
@@ -171,6 +173,7 @@ export class Framebuffer {
 
   static beginTemporalAAPass() {
     GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebuffer[(this.#frameCounter + 2) % 3])
+    GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
     GL.gl.viewport(0, 0, Framebuffer.#width, Framebuffer.#height)
   }
 

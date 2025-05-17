@@ -1,3 +1,5 @@
+const DEBUG = true
+
 export class GL {
   static #canvas
   static #gl
@@ -8,6 +10,7 @@ export class GL {
   static #cbLoad = null
   static #cbLoop = null
   static #cbResize = null
+  static #aspectRatio
 
   static #createCanvas() {
     GL.#canvas = document.createElement('canvas')
@@ -38,7 +41,12 @@ export class GL {
     if (!ext) {
       throw new Error('Floating-point rendering not supported! We kind of need that')
     }
-  
+
+    if (DEBUG) {
+      GL.#gl.getExtension('WEBGL_debug_renderer_info')
+      GL.#gl.getExtension('WEBGL_debug_shaders')
+    }
+    
     console.log(GL.#gl.getSupportedExtensions())
   }
 
@@ -47,6 +55,8 @@ export class GL {
     const dpr = devicePixelRatio || 1
     const width = Math.floor(rect.width * dpr)
     const height = Math.floor(rect.height * dpr)
+
+    GL.#aspectRatio = width / height
 
     console.log(width, height)
   
@@ -61,8 +71,8 @@ export class GL {
   }
 
   static #logStats() {
-    console.log(`Frames: ${GL.#frame}`)
-    console.log(`FPS: ${100000.0 / GL.#frameDuration}`)
+    // console.log(`Frames: ${GL.#frame}`)
+    // console.log(`FPS: ${10000.0 / GL.#frameDuration}`)
   }
 
   static #renderLoop(frameTime) {
@@ -128,5 +138,9 @@ export class GL {
   
   static get timeOffset() {
     return GL.#timeOffset
+  }
+
+  static get aspectRatio() {
+    return GL.#aspectRatio
   }
 }

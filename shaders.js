@@ -78,7 +78,9 @@ export class Shaders {
       'vertex': ['scene1'],
       'uniforms': {
         'inverseViewMatrix': null,
-        'time': null
+        'time': null,
+        'resolution': null,
+        'inverseResolution': null
       }
     }
   }
@@ -86,7 +88,8 @@ export class Shaders {
   static getShaderResources() {
     const output = {
       'common_glsl': 'shaders/common.glsl',
-      'hash_glsl': 'shaders/hash.glsl'
+      'hash_glsl': 'shaders/hash.glsl',
+      'distance_glsl': 'shaders/distance.glsl'
     }
 
     for (const programName in Shaders.#shaderPrograms) {
@@ -144,6 +147,8 @@ export class Shaders {
     shaderSource += '\n\n'
     shaderSource += ResourceManager.get('hash_glsl')
     shaderSource += '\n\n'
+    shaderSource += ResourceManager.get('distance_glsl')
+    shaderSource += '\n\n'
     shaderSource += shaderCode
 
     if (shaderType === 'vertex') {
@@ -157,7 +162,10 @@ export class Shaders {
     GL.gl.compileShader(shader)
 
     if (!GL.gl.getShaderParameter(shader, GL.gl.COMPILE_STATUS)) {
-      console.error(shaderSource)
+      const shaderLines = shaderSource.split('\n')
+      for (const line in shaderLines) {
+        console.error(`${line}:\t${shaderLines[line]}`)
+      }
 
       throw new Error(GL.gl.getShaderInfoLog(shader))
     }

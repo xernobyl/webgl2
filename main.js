@@ -1,4 +1,5 @@
-import { vec3 } from './gl-matrix/index.js'
+/* eslint-disable max-lines-per-function */
+import { vec2, vec3 } from './gl-matrix/index.js'
 import { Camera } from './camera.js'
 import { Framebuffer } from './framebuffer.js'
 import { Quad } from './quad.js'
@@ -9,7 +10,7 @@ import { MIDIManager } from './midi.js'
 import { Shaders } from './shaders.js'
 import { ResourceManager } from './resourcemanager.js'
 import { GL } from './gl.js'
-import { haltonSequence2D } from './shaders/utils.js'
+import { haltonSequence2D } from './utils.js'
 
 const jitterSize = 8
 
@@ -54,17 +55,17 @@ export class App {
   static #loop() {
     // Updates //
 
-    App.#camera.aspect = GL.canvas.offsetWidth / GL.canvas.offsetHeight
+    App.#camera.aspect = GL.aspectRatio
     //camera.focalLength = 8.0
 
     const [jitterX, jitterY] = App.#getJitterOffset()
     App.#camera.setJitter(jitterX, jitterY)
 
     App.#camera.lookAt(
-      vec3.fromValues(Math.cos(GL.time / 1000.0 * 0.1) * 2.5, 1.25, Math.sin(GL.time / 1000.0 * 0.1) * 2.5),
+      vec3.fromValues(Math.cos(GL.time / 1000.0 * 0.1) * 5.0, 1.25, Math.sin(GL.time / 1000.0 * 0.1) * 5.0),
       vec3.fromValues(0.0, 0.0, 0.0), vec3.fromValues(0.0, 1.0, 0.0)
     )
-    //camera.lookAt(vec3.fromValues(0.0, 0.0, -5.0), vec3.fromValues(0.0, 0.0, 0.0), vec3.fromValues(0.0, 1.0, 0.0))
+
     App.#camera.update()
 
     // Render //
@@ -72,8 +73,14 @@ export class App {
     // 1st pass
 
     Framebuffer.beginRenderPass()
-    GL.gl.clearColor(1.0, 1.0, 1.0, 0.0)
-    GL.gl.clear(GL.gl.COLOR_BUFFER_BIT | GL.gl.DEPTH_BUFFER_BIT)
+
+    Shaders.useProgram('scene1')
+    GL.gl.uniform1f(Shaders.uniform('scene1', 'time'), GL.time)
+    GL.gl.uniform2f(Shaders.uniform('scene1', 'resolution'), Framebuffer.width, Framebuffer.height)
+    const inverseResolution = 1.0 / vec2.length(vec2.fromValues(Framebuffer.width, Framebuffer.height))
+    GL.gl.uniform1f(Shaders.uniform('scene1', 'inverseResolution'), inverseResolution)
+    GL.gl.uniformMatrix4fv(Shaders.uniform('scene1', 'inverseViewMatrix'), false, App.#camera.inverseView)
+    Quad.draw()
 
     // draw plane
 
@@ -85,15 +92,15 @@ export class App {
     GL.gl.uniform2f(Shaders.uniform('plane', 'bias'), MIDIManager.getSliderValue(1), MIDIManager.getSliderValue(2))
     App.#plane.draw()
     GL.gl.disable(GL.gl.CULL_FACE)
+    GL.gl.disable(GL.gl.DEPTH_TEST)
 
     // draw cube
     
     Shaders.useProgram('color')
     GL.gl.uniformMatrix4fv(Shaders.uniform('color', 'mvp'), false, App.#camera.mvp)
     GL.gl.uniformMatrix4fv(Shaders.uniform('color', 'mv'), false, App.#camera.view)
-    GL.gl.uniform4f(Shaders.uniform('color', 'color'), 0.0, 0.0, 0.0, 0.0)
-    Cube.drawOutlines()
-    GL.gl.disable(GL.gl.DEPTH_TEST)
+    GL.gl.uniform3f(Shaders.uniform('color', 'color'), 1.0, 0.0, 0.0)
+    Cube.drawOutlines()  
 
     // draw particles
 
