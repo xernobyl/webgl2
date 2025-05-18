@@ -32,12 +32,20 @@ export class Camera {
 
   set aspect(aspect) {
     this.#aspect = aspect
-    this.#fovy = Math.sqrt(this.#fov * this.#fov / (1.0 + aspect * aspect))
+    this.#fovy = 2.0 * Math.atan(Math.tan(this.#fov * 0.5) / Math.sqrt(1.0 + aspect * aspect))
   }
 
   set fov(fov) {
     this.#fov = fov
-    this.#fovy = Math.sqrt(this.#fov * this.#fov / (1.0 + this.#aspect * this.#aspect))
+    this.#fovy = 2.0 * Math.atan(Math.tan(fov * 0.5) / Math.sqrt(1.0 + this.#aspect * this.#aspect))
+  }
+
+  get fov() {
+    return this.#fov
+  }
+
+  get fovy() {
+    return this.#fovy
   }
 
   get projection() {
@@ -59,14 +67,12 @@ export class Camera {
   setJitter(x, y) {
     this.#jitterX = x
     this.#jitterY = y
-
     this.updateProjection()
   }
 
   clearJitter() {
     this.#jitterX = 0
     this.#jitterY = 0
-
     this.updateProjection()
   }
 
@@ -76,7 +82,7 @@ export class Camera {
   }
 
   updateProjection() {
-    mat4.perspective(this.#projection, this.#fovy, this.#aspect, this.#near, this.#far)
+    mat4.perspectiveNO(this.#projection, this.#fovy, this.#aspect, this.#near, this.#far)
 
     if (this.#jitterX !== 0 || this.#jitterY !== 0) {
       this.#projection[8] += this.#jitterX * 2.0
@@ -86,15 +92,5 @@ export class Camera {
 
   update() {
     mat4.multiply(this.#mvp, this.#projection, this.#view)
-  }
-
-  set focalLength(mm) {
-    //const halfImageCircle = 21.633307652783937  // full frame - 36 * 24 mm
-    const halfImageCircle = 14.282944374322822  // super 35 film - 24.9 * 14 mm
-    const fieldOfView = 2.0 * Math.atan2(mm, halfImageCircle)
-    const verticalFieldOfView = fieldOfView * fieldOfView / (1.0 + this.aspect * this.aspect)
-    
-    this.#fov = fieldOfView
-    this.#fovy = verticalFieldOfView
   }
 }

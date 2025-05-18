@@ -1,5 +1,6 @@
 uniform mat4 inverseViewMatrix;
 uniform float time;
+uniform float fov;
 uniform vec2 resolution;
 uniform float inverseResolution;
 
@@ -74,12 +75,12 @@ vec3 render(vec2 uv, vec3 rayOrigin, vec3 cx, vec3 cy, vec3 cz, float zoom) {
 }
 
 void main() {
+  // TODO: add motion vectors (for TAA)
   outMotion = vec2(0.0, 0.0);
   
   // Move to uniforms?
   
   sPhase = time / 1000.0 * 0.1;
-  float fov = pi / 2.0;
   float thf = tan(fov * 0.5);
   float zoom = 1.0 / thf;
   halfPixelScale = thf * inverseResolution;  // half a pixel at distance
@@ -89,10 +90,10 @@ void main() {
   uv *= inverseResolution;
   
   // Extract the camera's right, up, and forward vectors, and position from the inverse view matrix
-  vec3 cx = normalize(vec3(inverseViewMatrix[0][0], inverseViewMatrix[0][1], inverseViewMatrix[0][2])); // Right vector
-  vec3 cy = normalize(vec3(inverseViewMatrix[1][0], inverseViewMatrix[1][1], inverseViewMatrix[1][2])); // Up vector
-  vec3 cz = normalize(vec3(inverseViewMatrix[2][0], inverseViewMatrix[2][1], inverseViewMatrix[2][2])); // Forward vector
-  vec3 rayOrigin = vec3(inverseViewMatrix[3]);                                                         // Position
+  vec3 cx = inverseViewMatrix[0].xyz; // Right vector
+  vec3 cy = inverseViewMatrix[1].xyz; // Up vector
+  vec3 cz = inverseViewMatrix[2].xyz; // Forward vector
+  vec3 rayOrigin = inverseViewMatrix[3].xyz;                                                         // Position
  
   vec3 color = render(uv, rayOrigin, cx, cy, cz, zoom);  
   

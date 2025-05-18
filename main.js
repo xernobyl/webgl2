@@ -56,14 +56,17 @@ export class App {
     // Updates //
 
     App.#camera.aspect = GL.aspectRatio
-    //camera.focalLength = 8.0
+    App.#camera.fov = Math.PI / 2.0 + Math.PI / 4.0 * Math.sin(GL.time / 1000.0)
 
     const [jitterX, jitterY] = App.#getJitterOffset()
     App.#camera.setJitter(jitterX, jitterY)
 
+    const camPos = vec3.fromValues(Math.cos(GL.time / 1000.0 * 0.1) * 10.0, 2.5, Math.sin(GL.time / 1000.0 * 0.1) * 10.0)
+
     App.#camera.lookAt(
-      vec3.fromValues(Math.cos(GL.time / 1000.0 * 0.1) * 5.0, 1.25, Math.sin(GL.time / 1000.0 * 0.1) * 5.0),
-      vec3.fromValues(0.0, 0.0, 0.0), vec3.fromValues(0.0, 1.0, 0.0)
+      camPos,
+      vec3.fromValues(0.0, 0.0, 0.0),
+      vec3.fromValues(0.0, 1.0, 0.0)
     )
 
     App.#camera.update()
@@ -74,12 +77,14 @@ export class App {
 
     Framebuffer.beginRenderPass()
 
+    const inverseResolution = 1.0 / vec2.length(vec2.fromValues(Framebuffer.width, Framebuffer.height))
+    
     Shaders.useProgram('scene1')
     GL.gl.uniform1f(Shaders.uniform('scene1', 'time'), GL.time)
     GL.gl.uniform2f(Shaders.uniform('scene1', 'resolution'), Framebuffer.width, Framebuffer.height)
-    const inverseResolution = 1.0 / vec2.length(vec2.fromValues(Framebuffer.width, Framebuffer.height))
     GL.gl.uniform1f(Shaders.uniform('scene1', 'inverseResolution'), inverseResolution)
     GL.gl.uniformMatrix4fv(Shaders.uniform('scene1', 'inverseViewMatrix'), false, App.#camera.inverseView)
+    GL.gl.uniform1f(Shaders.uniform('scene1', 'fov'), App.#camera.fov)
     Quad.draw()
 
     // draw plane

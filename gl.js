@@ -41,11 +41,6 @@ export class GL {
     if (!ext) {
       throw new Error('Floating-point rendering not supported! We kind of need that')
     }
-
-    if (DEBUG) {
-      GL.#gl.getExtension('WEBGL_debug_renderer_info')
-      GL.#gl.getExtension('WEBGL_debug_shaders')
-    }
     
     console.log(GL.#gl.getSupportedExtensions())
   }
@@ -57,8 +52,6 @@ export class GL {
     const height = Math.floor(rect.height * dpr)
 
     GL.#aspectRatio = width / height
-
-    console.log(width, height)
   
     if (GL.#canvas.width !== width || GL.#canvas.height !== height) {
       GL.#canvas.width = width

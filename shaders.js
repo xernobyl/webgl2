@@ -80,7 +80,8 @@ export class Shaders {
         'inverseViewMatrix': null,
         'time': null,
         'resolution': null,
-        'inverseResolution': null
+        'inverseResolution': null,
+        'fov': null
       }
     }
   }
