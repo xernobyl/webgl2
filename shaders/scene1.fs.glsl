@@ -18,54 +18,70 @@ lowp uint objectId;
 
 vec3 light_pos;
 
+float rdSph(vec3 p, vec4 rid) {
+  const float hole0Radius = 1.0 / 6.0;
+  const float hole0Spread = 0.25;
+
+  vec4 h = hash4(rid);
+
+  vec3 bias = h.xyz - 0.5;
+  bias *= hole0Spread;
+
+  float radius = h.w * hole0Radius;
+
+  return distance(p, bias) - radius;
+}
+
 float warehouse(vec3 p, bool include_lights, out uint object) {
-  const float noiseThreshold = 0.1;
-  
   float objs[3];
-  float rebar;
 
   vec3 pillar_pos = opRep(p + vec3(-15.0, -2.5, 5.0), vec3(15.0, 0.0, 20.0));
   float main_walls = -sdBox(p + vec3(0.0, -2.5, 0.0), vec3(20.0, 5.0, 40.0));
   
-  // add noise if we're gettting closer
-  if (main_walls <= noiseThreshold) {
-    float t = openSimplex2_Conventional(p * 2.0).w;
-    t = clamp(t + 0.35, -1.0, 0.0) + clamp(t - 0.35, 0.0, 1.0);
-  
-    main_walls += 0.8 * t;
+  float pillars = sdBox(pillar_pos, vec3(0.5, 5.0, 0.5));
+
+  float hole0 = 999999.999999999;
+
+  for (float i = 1.0; i < 4.0; i += 1.0) {
+    float repeat = 0.5;
+    vec3 id = round(p / repeat);
+
+    vec3 offset = sign(p - repeat * id);
+    float d = 1e20;
+
+    // Repeat without artifacts (https://iquilezles.org/articles/sdfrepetition/)
+    for (int k = 0; k < 2; k++) {
+      for (int j = 0; j < 2; j++) {
+        for (int i = 0; i < 2; i++) {
+          vec3 rid = id + vec3(i, j, k) * offset; // nearest object center
+          vec3 r = p - repeat * rid;
+          d = min(d, rdSph(r, vec4(rid, i)));
+        }
+      }
+    }
+
+    //hole0 = min(hole0, d);
+    hole0 = opSmoothUnion(hole0, d, 1.0/8.0);
   }
 
-  float pillars = sdBox(pillar_pos, vec3(0.5, 5.0, 0.5));
-  
   float bars = min(sdBox(opRep(p + vec3(0.0, -7.0, 0.0), vec3(15.0, 1000.0, 0.0)), vec3(0.5, 0.5, 40.0)),
     sdBox(opRep(p + vec3(0.0, -7.0, 5.0), vec3(1000.0, 1000.0, 20.0)), vec3(20.0, 0.5, 0.5)));
     
   float bars_and_pillars = opSmoothUnion(bars, pillars, 0.25);
 
-  // add noise if we're gettting closer
-  if (pillars <= noiseThreshold) {
-    rebar = min(
-      min(
-        sdVerticalCapsule(pillar_pos + vec3(-0.5 / 1.5, 10.0, 0.5 / 1.5), 100.0, 0.02),
-        sdVerticalCapsule(pillar_pos + vec3(0.5 / 1.5, 10.0, 0.5 / 1.5), 100.0, 0.02)
-      ),
-      min(
-        sdVerticalCapsule(pillar_pos + vec3(-0.5 / 1.5, 10.0, -0.5 / 1.5), 100.0, 0.02),
-        sdVerticalCapsule(pillar_pos + vec3(0.5 / 1.5, 10.0, -0.5 / 1.5), 100.0, 0.02)
-      ));
-      
-      bars_and_pillars += 1.5 * (clamp(openSimplex2_Conventional(p * 1.0).w + 0.5, 0.55, 1.0) - 0.55);
-  }
-  else {
-    // no idea why this is needed. took a while to find it.
-    rebar = 9999999999.9999999;
-  }
+  float rebar = min4(sdVerticalCapsule(pillar_pos + vec3(-0.5 / 1.5, 10.0, 0.5 / 1.5), 100.0, 0.02),
+               sdVerticalCapsule(pillar_pos + vec3(0.5 / 1.5, 10.0, 0.5 / 1.5), 100.0, 0.02),
+               sdVerticalCapsule(pillar_pos + vec3(-0.5 / 1.5, 10.0, -0.5 / 1.5), 100.0, 0.02),
+               sdVerticalCapsule(pillar_pos + vec3(0.5 / 1.5, 10.0, -0.5 / 1.5), 100.0, 0.02));
 
-  float room = opSmoothUnion(main_walls, bars_and_pillars, 0.125);
+  bars_and_pillars = opSmoothSubtraction(hole0, bars_and_pillars, 1.0 / 32.0);
   
-  float pipes = min(
-    sdVerticalCapsule(p.xzy - vec3(18.0, -50.0, 6.0), 200.0, 0.10),
-    sdVerticalCapsule(p.xzy - vec3(18.0, -50.0, 5.6), 200.0, 0.10));
+  float room = opSmoothUnion(main_walls, bars_and_pillars, 1.0 / 16.0);
+
+  
+  
+  float pipes = min(sdVerticalCapsule(p.xzy - vec3(18.0, -50.0, 6.0), 200.0, 0.10),
+                    sdVerticalCapsule(p.xzy - vec3(18.0, -50.0, 5.6), 200.0, 0.10));
   
   objs[0] = room;
   objs[1] = rebar;
@@ -89,7 +105,7 @@ float warehouse(vec3 p, bool include_lights, out uint object) {
     for (uint i = 0u; i < 1u; ++i) {
       if (light_objs[i] < min_dist) {
         min_dist = light_objs[i];
-        object = i + 4u;
+        object = i + 1u;
       }
     }
   }
@@ -98,8 +114,6 @@ float warehouse(vec3 p, bool include_lights, out uint object) {
 }
 
 float scene(vec3 p) {
-  objectId = 1u;
-
   //return sdBox(p, vec3(1.0));
 
   return warehouse(p, true, objectId);
@@ -155,8 +169,19 @@ vec3 render(vec2 uv, vec3 rayOrigin, vec3 cx, vec3 cy, vec3 cz, float zoom, out 
     return vec3(0.5);
   }
   
+  
   vec3 normal = sceneNormal(rayPos, totalDistance);
-  return normal * 0.5 + 0.5;
+  vec3 color = vec3(saturate(-dot(normal, rayDir)));
+
+  if (objectId == 2u) {
+    color *= vec3(185.0 / 255.0, 71.0 / 255.0, 0.0);
+  }
+
+  if (objectId == 3u) {
+    color *= vec3(0.0, 0.0, 1.0);
+  }
+
+  return color;
 }
 
 void main() {
@@ -180,9 +205,7 @@ void main() {
   vec3 rayOrigin = inverseViewMatrix[3].xyz;
  
   vec3 pos;
-  vec3 color = render(uv, rayOrigin, cx, cy, cz, zoom, pos);  
-  
-  outColor = sRGB(color);
+  outColor = render(uv, rayOrigin, cx, cy, cz, zoom, pos);  
 
   // Motion for TAA
   vec4 currentClipPos = currentViewProjMatrix * vec4(pos, 1.0);

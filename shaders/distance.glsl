@@ -19,6 +19,39 @@ vec3 opRep(vec3 p, vec3 c) {
   return q;
 }
 
+vec3 opLimRep(vec3 p, vec3 s, vec3 l) {
+  return p - s * clamp(round(p / s), -l, l);
+}
+
+vec3 opRepMirrored(vec3 p, vec3 s) {
+  vec3 id = round(p / s);
+  vec3 r = p - s * id;
+  return vec3(((int(id.x) & 1) == 0) ? r.x : -r.x,
+              ((int(id.y) & 1) == 0) ? r.y : -r.y,
+              ((int(id.z) & 1) == 0) ? r.z : -r.z);
+}
+
+/*
+float repeated(vec3 p, float s) {
+  vec3 id = round(p / s);
+  vec3 o = sign(p - s * id);
+
+  float d = 1e20;
+
+  for (int k = 0; k < 2; k++) {
+    for (int j = 0; j < 2; j++) {
+      for (int i = 0; i < 2; i++) {
+        vec3 rid = id + vec3(i, j, k) * o;
+        vec3 r = p - s * rid;
+        d = min(d, sdf(r));
+      }
+    }
+  }
+ 
+  return d;
+}
+*/
+
 float opSmoothUnion(float d1, float d2, float k) {
   float h = clamp(0.5 + 0.5 * (d2 - d1) / k, 0.0, 1.0);
   return mix(d2, d1, h) - k * h * (1.0 - h);
@@ -28,6 +61,11 @@ void opSmoothUnion(float d0, vec3 color0, float d1, vec3 color1, float k, out fl
   float h = clamp(0.5 + 0.5 * (d1 - d0) / k, 0.0, 1.0);
   color = mix(color1, color0, h);
   f = mix(d1, d0, h) - k * h * (1.0 - h);
+}
+
+float opSmoothSubtraction(float d1, float d2, float k) {
+  float h = clamp(0.5 - 0.5 * (d2 + d1) / k, 0.0, 1.0);
+  return mix(d2, -d1, h) + k * h * (1.0 - h);
 }
 
 vec3 rotatePoint3D(vec3 point, vec3 axis, float angle) {

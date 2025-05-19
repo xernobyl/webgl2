@@ -29,3 +29,4 @@ float min3(float a, float b, float c) {
 float min4(float a, float b, float c, float d) {
   return min(a, min(b, min(c, d)));
 }
+

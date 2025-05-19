@@ -136,7 +136,6 @@ export class Framebuffer {
       if (!Framebuffer.#checkFramebufferStatus()) {
         return false
       }
-      GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0, GL.gl.COLOR_ATTACHMENT1])
     }
 
     for (let i = 0; i < 3; i++) {
@@ -145,7 +144,6 @@ export class Framebuffer {
       if (!Framebuffer.#checkFramebufferStatus()) {
         return false
       }
-      GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
     }
 
     GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferHalf)
@@ -153,21 +151,18 @@ export class Framebuffer {
     if (!Framebuffer.#checkFramebufferStatus()) {
       return false
     }
-    GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
 
     GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferQuarter)
     GL.gl.framebufferTexture2D(GL.gl.DRAW_FRAMEBUFFER, GL.gl.COLOR_ATTACHMENT0, GL.gl.TEXTURE_2D, Framebuffer.#textureHDRQuarter, 0)
     if (!Framebuffer.#checkFramebufferStatus()) {
       return false
     }
-    GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
 
     GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferEighth)
     GL.gl.framebufferTexture2D(GL.gl.DRAW_FRAMEBUFFER, GL.gl.COLOR_ATTACHMENT0, GL.gl.TEXTURE_2D, Framebuffer.#textureHDREighth, 0)
     if (!Framebuffer.#checkFramebufferStatus()) {
       return false
     }
-    GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
 
     return true
   }

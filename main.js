@@ -182,8 +182,9 @@ export class App {
     }
 
     window.registerCommand('scale', scale => App.frameBufferScale = scale)
-    window.registerCommand('setLED', (note, state) => MIDIManager.setLED(note, state))
-    window.registerCommand('allLEDs', state => MIDIManager.setAllLEDs(state))
+    window.registerCommand('led', (note, state) => MIDIManager.setLED(note, state))
+    window.registerCommand('start', bpm => MIDIManager.startSequencer(bpm))
+    window.registerCommand('stop', () => MIDIManager.stopSequencer())
   }
 
   static init() {
