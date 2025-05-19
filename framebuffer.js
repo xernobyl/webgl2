@@ -14,6 +14,7 @@ export class Framebuffer {
   static #textureDepth
 
   static #framebuffer = []
+  static #framebufferNoMotion = []
   static #framebufferHalf
   static #framebufferQuarter
   static #framebufferEighth
@@ -63,6 +64,10 @@ export class Framebuffer {
 
       for (let i = 0; i < 3; i++) {
         Framebuffer.#framebuffer[i] = GL.gl.createFramebuffer()
+      }
+
+      for (let i = 0; i < 3; i++) {
+        Framebuffer.#framebufferNoMotion[i] = GL.gl.createFramebuffer()
       }
 
       Framebuffer.#framebufferHalf = GL.gl.createFramebuffer()
@@ -134,6 +139,15 @@ export class Framebuffer {
       GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0, GL.gl.COLOR_ATTACHMENT1])
     }
 
+    for (let i = 0; i < 3; i++) {
+      GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferNoMotion[i])
+      GL.gl.framebufferTexture2D(GL.gl.DRAW_FRAMEBUFFER, GL.gl.COLOR_ATTACHMENT0, GL.gl.TEXTURE_2D, Framebuffer.#textureHDR[i], 0)
+      if (!Framebuffer.#checkFramebufferStatus()) {
+        return false
+      }
+      GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
+    }
+
     GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferHalf)
     GL.gl.framebufferTexture2D(GL.gl.DRAW_FRAMEBUFFER, GL.gl.COLOR_ATTACHMENT0, GL.gl.TEXTURE_2D, Framebuffer.#textureHDRHalf, 0)
     if (!Framebuffer.#checkFramebufferStatus()) {
@@ -172,7 +186,7 @@ export class Framebuffer {
   }
 
   static beginTemporalAAPass() {
-    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebuffer[(this.#frameCounter + 2) % 3])
+    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferNoMotion[(this.#frameCounter + 2) % 3])
     GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
     GL.gl.viewport(0, 0, Framebuffer.#width, Framebuffer.#height)
   }

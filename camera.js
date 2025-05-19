@@ -11,7 +11,8 @@ export class Camera {
   #fovy
 
   #projection
-  #mvp
+  #viewProjection
+  #previousViewProjection
   #view
   #inverseView
   
@@ -25,9 +26,10 @@ export class Camera {
     this.#jitterY = 0
 
     this.#projection = mat4.create()
-    this.#mvp = mat4.create()
+    this.#viewProjection = mat4.create()
     this.#view = mat4.create()
     this.#inverseView = mat4.create()
+    this.#previousViewProjection = mat4.create()
   }
 
   set aspect(aspect) {
@@ -52,8 +54,12 @@ export class Camera {
     return this.#projection
   }
   
-  get mvp() {
-    return this.#mvp
+  get viewProjection() {
+    return this.#viewProjection
+  }
+
+  get previousViewProjection() {
+    return this.#previousViewProjection
   }
   
   get view() {
@@ -91,6 +97,7 @@ export class Camera {
   }
 
   update() {
-    mat4.multiply(this.#mvp, this.#projection, this.#view)
+    mat4.copy(this.#previousViewProjection, this.#viewProjection)
+    mat4.multiply(this.#viewProjection, this.#projection, this.#view)
   }
 }

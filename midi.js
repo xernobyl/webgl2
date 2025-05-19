@@ -1,12 +1,8 @@
 export class MIDIManager {
-  // =====================
-  // Static Properties
-  // =====================
   static midiAccess = null
   static inputs = new Map()
   static outputs = new Map()
   
-  // MIDI State Tracking
   static sliderState = new Map()
   static encoderState = new Map()
 
@@ -14,10 +10,6 @@ export class MIDIManager {
   // Public Methods
   // =====================
 
-  /**
-   * Initialize MIDI access and set up event listeners
-   * @returns {Promise<boolean>} True if initialization succeeded
-   */
   static async initialize() {
     if (!navigator.requestMIDIAccess) {
       console.error('WebMIDI is not supported in your browser')
@@ -25,9 +17,9 @@ export class MIDIManager {
     }
 
     try {
-      this.midiAccess = await navigator.requestMIDIAccess({ sysex: false })
-      this.#setupEventListeners()
-      this.#updateDeviceLists()
+      MIDIManager.midiAccess = await navigator.requestMIDIAccess({ sysex: false })
+      MIDIManager.#setupEventListeners()
+      MIDIManager.#updateDeviceLists()
       console.log('MIDI initialized successfully')
       return true
     } catch (error) {
@@ -36,48 +28,74 @@ export class MIDIManager {
     }
   }
 
-  // =====================
-  // State Getters
-  // =====================
-
   static getSliderValue(slider) {
-    return this.sliderState.get(slider) || 0
+    return MIDIManager.sliderState.get(slider) || 0
   }
 
   static getEncoderValue(encoder) {
-    return this.encoderState.get(encoder) || 0
+    return MIDIManager.encoderState.get(encoder) || 0
   }
 
+  /**
+   * Send a MIDI message to all connected output devices
+   * @param {Uint8Array} message - MIDI message bytes
+   */
+  static sendMIDIMessage(message) {
+    for (const output of MIDIManager.outputs.values()) {
+      output.send(message)
+    }
+  }
+
+  /**
+   * Set an LED on or off using a Note On message (Mackie-style)
+   * @param {number} note - The MIDI note number (button/LED ID)
+   * @param {boolean} state - true = LED on, false = off
+   * @param {number} [channel=1] - MIDI channel (1-16)
+   */
+  static setLED(note, state) {
+    const channel = 1
+    const status = 0x90 | ((channel - 1) & 0x0F) // Note On, channel masked
+    const velocity = state ? 127 : 0
+    MIDIManager.sendMIDIMessage(new Uint8Array([status, note, velocity]))
+  }
+
+  static setAllLEDs(state) {
+    for (let i = 0; i < 128; i++) {
+      MIDIManager.setLED(i, state)
+    }
+  }
+
+  // =====================
+  // Private Methods
+  // =====================
+
   static #setupEventListeners() {
-    if (!this.midiAccess) {
+    if (!MIDIManager.midiAccess) {
       return
     }
 
-    // Handle device connection/disconnection
-    this.midiAccess.onstatechange = event => {
+    MIDIManager.midiAccess.onstatechange = event => {
       console.log(`Device ${event.port.name} ${event.port.state}`)
-      this.#updateDeviceLists()
-      
+      MIDIManager.#updateDeviceLists()
+
       if (event.port.state === 'connected' && event.port.type === 'input') {
-        event.port.onmidimessage = msg => this.handleMessage(msg)
+        event.port.onmidimessage = msg => MIDIManager.#handleMessage(msg)
       }
     }
   }
 
   static #updateDeviceLists() {
-    this.inputs.clear()
-    this.outputs.clear()
+    MIDIManager.inputs.clear()
+    MIDIManager.outputs.clear()
 
-    if (this.midiAccess) {
-      // Update inputs
-      this.midiAccess.inputs.forEach(input => {
-        this.inputs.set(input.id, input)
-        input.onmidimessage = msg => this.#handleMessage(msg)
+    if (MIDIManager.midiAccess) {
+      MIDIManager.midiAccess.inputs.forEach(input => {
+        MIDIManager.inputs.set(input.id, input)
+        input.onmidimessage = msg => MIDIManager.#handleMessage(msg)
       })
 
-      // Update outputs
-      this.midiAccess.outputs.forEach(output => {
-        this.outputs.set(output.id, output)
+      MIDIManager.midiAccess.outputs.forEach(output => {
+        MIDIManager.outputs.set(output.id, output)
       })
     }
   }
@@ -88,24 +106,18 @@ export class MIDIManager {
     const channel = (command & 0x0f) + 1
 
     switch (commandType) {
-      case 0xB0: { // Control Change
-        let value = this.encoderState.get(data1) || 0
-        
-        if (data2 === 65) {
-          value -= 1
-        } else if (data2 === 1) {
-          value += 1
-        }
-
+      case 0xB0: { // Control Change (Encoders)
+        let value = MIDIManager.encoderState.get(data1) || 0
+        value += data2 > 64 ? -data2 + 64 : data2
         console.debug('encoder', data1, value)
-        this.encoderState.set(data1, value)
+        MIDIManager.encoderState.set(data1, value)
         break
       }
 
-      case 0xE0: { // Pitch Bend
+      case 0xE0: { // Pitch Bend (Sliders)
         const value = ((data2 << 7) | data1) / 16256
         console.debug('slider', channel, value)
-        this.sliderState.set(channel, value)
+        MIDIManager.sliderState.set(channel, value)
         break
       }
 

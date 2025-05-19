@@ -12,7 +12,7 @@ float luma(vec3 col) {
 void main() {
   vec3 current = texture(samplerCurrent, p).rgb;
   vec2 motion = texture(samplerMotion, p).xy;
-  vec3 previous = texture(samplerPrevious, p).rgb;
+  vec3 previous = texture(samplerPrevious, p + motion).rgb;
 
   // Neighborhood clamping
   vec3 minCol = current;

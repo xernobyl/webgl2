@@ -56,12 +56,17 @@ export class App {
     // Updates //
 
     App.#camera.aspect = GL.aspectRatio
-    App.#camera.fov = Math.PI / 2.0 + Math.PI / 4.0 * Math.sin(GL.time / 1000.0)
+    // App.#camera.fov = Math.PI / 2.0 + Math.PI / 4.0 * Math.sin(GL.time / 1000.0)
+    App.#camera.fov = Math.PI * 0.5 * (1.0 - MIDIManager.getSliderValue(4))
 
     const [jitterX, jitterY] = App.#getJitterOffset()
     App.#camera.setJitter(jitterX, jitterY)
 
-    const camPos = vec3.fromValues(Math.cos(GL.time / 1000.0 * 0.1) * 10.0, 2.5, Math.sin(GL.time / 1000.0 * 0.1) * 10.0)
+    const phase = GL.time * 0.0005 //MIDIManager.getSliderValue(1) * Math.PI * 2.0
+    const rad = 7.5 //MIDIManager.getSliderValue(2) * 20.0
+    const height = 1.5  //MIDIManager.getSliderValue(3) * 10.0 - 5.0
+
+    const camPos = vec3.fromValues(Math.cos(phase) * rad, height, Math.sin(phase) * rad)
 
     App.#camera.lookAt(
       camPos,
@@ -81,10 +86,12 @@ export class App {
     
     Shaders.useProgram('scene1')
     GL.gl.uniform1f(Shaders.uniform('scene1', 'time'), GL.time)
-    GL.gl.uniform2f(Shaders.uniform('scene1', 'resolution'), Framebuffer.width, Framebuffer.height)
-    GL.gl.uniform1f(Shaders.uniform('scene1', 'inverseResolution'), inverseResolution)
-    GL.gl.uniformMatrix4fv(Shaders.uniform('scene1', 'inverseViewMatrix'), false, App.#camera.inverseView)
+    GL.gl.uniform3f(Shaders.uniform('scene1', 'resolution'), Framebuffer.width, Framebuffer.height, inverseResolution)    
     GL.gl.uniform1f(Shaders.uniform('scene1', 'fov'), App.#camera.fov)
+    GL.gl.uniformMatrix4fv(Shaders.uniform('scene1', 'inverseViewMatrix'), false, App.#camera.inverseView)
+    GL.gl.uniformMatrix4fv(Shaders.uniform('scene1', 'currentViewProjMatrix'), false, App.#camera.viewProjection)
+    GL.gl.uniformMatrix4fv(Shaders.uniform('scene1', 'previousViewProjMatrix'), false, App.#camera.previousViewProjection)
+
     Quad.draw()
 
     // draw plane
@@ -92,7 +99,7 @@ export class App {
     GL.gl.enable(GL.gl.DEPTH_TEST)
     GL.gl.enable(GL.gl.CULL_FACE)
     Shaders.useProgram('plane')
-    GL.gl.uniformMatrix4fv(Shaders.uniform('plane', 'mvp'), false, App.#camera.mvp)
+    GL.gl.uniformMatrix4fv(Shaders.uniform('plane', 'mvp'), false, App.#camera.viewProjection)
     GL.gl.uniformMatrix4fv(Shaders.uniform('plane', 'mv'), false, App.#camera.view)
     GL.gl.uniform2f(Shaders.uniform('plane', 'bias'), MIDIManager.getSliderValue(1), MIDIManager.getSliderValue(2))
     App.#plane.draw()
@@ -102,7 +109,7 @@ export class App {
     // draw cube
     
     Shaders.useProgram('color')
-    GL.gl.uniformMatrix4fv(Shaders.uniform('color', 'mvp'), false, App.#camera.mvp)
+    GL.gl.uniformMatrix4fv(Shaders.uniform('color', 'mvp'), false, App.#camera.viewProjection)
     GL.gl.uniformMatrix4fv(Shaders.uniform('color', 'mv'), false, App.#camera.view)
     GL.gl.uniform3f(Shaders.uniform('color', 'color'), 1.0, 0.0, 0.0)
     Cube.drawOutlines()  
@@ -128,7 +135,7 @@ export class App {
     GL.gl.activeTexture(GL.gl.TEXTURE0)
     GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureHDR)
     GL.gl.activeTexture(GL.gl.TEXTURE1)
-    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureHDR)
+    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureMotion)
     GL.gl.activeTexture(GL.gl.TEXTURE2)
     GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureAccum)
 
@@ -175,6 +182,8 @@ export class App {
     }
 
     window.registerCommand('scale', scale => App.frameBufferScale = scale)
+    window.registerCommand('setLED', (note, state) => MIDIManager.setLED(note, state))
+    window.registerCommand('allLEDs', state => MIDIManager.setAllLEDs(state))
   }
 
   static init() {

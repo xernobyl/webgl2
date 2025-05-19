@@ -9,6 +9,21 @@ float sdSphere(vec3 p, float r) {
   return length(p) - r;
 }
 
+float sdVerticalCapsule(vec3 p, float h, float r) {
+  p.y -= clamp(p.y, 0.0, h);
+  return length(p) - r;
+}
+
+vec3 opRep(vec3 p, vec3 c) {
+  vec3 q = mod(p + 0.5 * c, c) - 0.5 * c;
+  return q;
+}
+
+float opSmoothUnion(float d1, float d2, float k) {
+  float h = clamp(0.5 + 0.5 * (d2 - d1) / k, 0.0, 1.0);
+  return mix(d2, d1, h) - k * h * (1.0 - h);
+}
+
 void opSmoothUnion(float d0, vec3 color0, float d1, vec3 color1, float k, out float f, out vec3 color) {
   float h = clamp(0.5 + 0.5 * (d1 - d0) / k, 0.0, 1.0);
   color = mix(color1, color0, h);

@@ -1,15 +1,17 @@
 import { GL } from './gl.js'
 import { ResourceManager } from './resourcemanager.js'
 
+const commonShaders = {
+  'common_glsl': 'shaders/common.glsl',
+  'hash_glsl': 'shaders/hash.glsl',
+  'opensimplex2_glsl': 'shaders/OpenSimplex2.glsl',
+  'distance_glsl': 'shaders/distance.glsl'
+}
+
 const shaderTypes = {
   'fragment': 'fs',
   'vertex': 'vs'
 }
-
-const shaderHeader =
-`#version 300 es
-precision highp int;
-precision highp float;`
 
 export class Shaders {
   static #shaderPrograms = {
@@ -78,20 +80,18 @@ export class Shaders {
       'vertex': ['scene1'],
       'uniforms': {
         'inverseViewMatrix': null,
+        'currentViewProjMatrix': null,
+        'previousViewProjMatrix': null,
         'time': null,
         'resolution': null,
-        'inverseResolution': null,
         'fov': null
       }
     }
   }
 
   static getShaderResources() {
-    const output = {
-      'common_glsl': 'shaders/common.glsl',
-      'hash_glsl': 'shaders/hash.glsl',
-      'distance_glsl': 'shaders/distance.glsl'
-    }
+    const output = {}
+    Object.assign(output, commonShaders)
 
     for (const programName in Shaders.#shaderPrograms) {
       const program = Shaders.#shaderPrograms[programName]
@@ -142,14 +142,19 @@ export class Shaders {
   }
 
   static #compileShader(shaderCode, shaderType) {
-    let shaderSource = shaderHeader
-    shaderSource += '\n\n'
-    shaderSource += ResourceManager.get('common_glsl')
-    shaderSource += '\n\n'
-    shaderSource += ResourceManager.get('hash_glsl')
-    shaderSource += '\n\n'
-    shaderSource += ResourceManager.get('distance_glsl')
-    shaderSource += '\n\n'
+    let shaderSource = `#version 300 es
+precision highp int;
+precision highp float;
+
+`
+
+    for (const shaderName in commonShaders) {
+      shaderSource += `// ${shaderName}\n\n`
+      shaderSource += ResourceManager.get(shaderName)
+      shaderSource += '\n\n'
+    }
+
+    shaderSource += `// // //\n\n`
     shaderSource += shaderCode
 
     if (shaderType === 'vertex') {
