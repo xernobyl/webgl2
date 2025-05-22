@@ -116,6 +116,11 @@ float scene(vec3 p) {
   return warehouse(p, true, objectId);
 }
 
+float sceneNoLights(vec3 p) {
+  uint objectId;
+  return warehouse(p, false, objectId);
+}
+
 vec3 sceneNormal(vec3 p, float d) {
   const vec2 k = vec2(1.0, -1.0);
   const vec4 sb = vec4(2.0, tau, 1.0, pi);
@@ -140,6 +145,31 @@ vec3 sceneNormal(vec3 p, float d) {
 
 vec3 colorize(float t) {
   return palette(t, vec3(0.5,0.5,0.5),vec3(0.5,0.5,0.5),vec3(1.0,0.7,0.4),vec3(0.0,0.15,0.20));
+}
+
+float calcSoftshadow(in vec3 ro, in vec3 rd, float error, in float mint, in float tmax, in float w) {
+  float res = 1.0;
+  float t = mint;
+  float ph = 1e10; // big, such that y = 0 on the first iteration
+
+  for (lowp uint i = 0u; i < 32u; i++) {
+    float h = sceneNoLights(ro + rd * t);
+
+    float y = h*h/(2.0*ph);
+    float d = sqrt(h*h-y*y);
+    res = min( res, d/(w*max(0.0,t-y)) );
+    ph = h;
+
+    t += h;
+
+    if (res <= error || t > tmax) {
+      break;
+    }
+
+  }
+
+  res = saturate(res);
+  return res * res * (3.0 - 2.0 * res);
 }
 
 vec3 render(vec2 uv, vec3 rayOrigin, vec3 cx, vec3 cy, vec3 cz, float zoom, out vec3 pos) {
@@ -203,6 +233,7 @@ vec3 render(vec2 uv, vec3 rayOrigin, vec3 cx, vec3 cy, vec3 cz, float zoom, out 
   float d = distance(rayPos, light_pos);
 
   vec3 lightValue = lightColor / (/*epsilon +*/ d * d);
+  lightValue *= calcSoftshadow(rayPos, L, totalDistance * halfPixelScale * 2.0, 0.25, d, 0.01);
 
   vec3 color = lightingModel(-rayDir, N, L, material.albedo, material.metallic, material.roughness) * lightValue;
 
