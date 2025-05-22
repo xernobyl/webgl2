@@ -85,7 +85,7 @@ export class App {
     const inverseResolution = 1.0 / vec2.length(vec2.fromValues(Framebuffer.width, Framebuffer.height))
     
     Shaders.useProgram('scene1')
-    GL.gl.uniform1f(Shaders.uniform('scene1', 'time'), GL.time)
+    GL.gl.uniform1f(Shaders.uniform('scene1', 'time'), GL.time / 1000.0)
     GL.gl.uniform3f(Shaders.uniform('scene1', 'resolution'), Framebuffer.width, Framebuffer.height, inverseResolution)    
     GL.gl.uniform1f(Shaders.uniform('scene1', 'fov'), App.#camera.fov)
     GL.gl.uniformMatrix4fv(Shaders.uniform('scene1', 'inverseViewMatrix'), false, App.#camera.inverseView)
@@ -94,6 +94,7 @@ export class App {
 
     Quad.draw()
 
+    /*
     // draw plane
 
     GL.gl.enable(GL.gl.DEPTH_TEST)
@@ -113,6 +114,7 @@ export class App {
     GL.gl.uniformMatrix4fv(Shaders.uniform('color', 'mv'), false, App.#camera.view)
     GL.gl.uniform3f(Shaders.uniform('color', 'color'), 1.0, 0.0, 0.0)
     Cube.drawOutlines()  
+    */
 
     // draw particles
 
