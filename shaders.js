@@ -1,23 +1,17 @@
 import { GL } from './gl.js'
 import { ResourceManager } from './resourcemanager.js'
 
-const commonShaders = {
-  'common_glsl': 'shaders/common.glsl',
-  'hash_glsl': 'shaders/hash.glsl',
-  'opensimplex2_glsl': 'shaders/OpenSimplex2.glsl',
-  'distance_glsl': 'shaders/distance.glsl'
-}
-
 const shaderTypes = {
   'fragment': 'fs',
-  'vertex': 'vs'
+  'vertex': 'vs',
+  'geometry': 'gs'
 }
 
 export class Shaders {
   static #shaderPrograms = {
     screen: {
-      'fragment': ['screen'],
-      'vertex': ['screen'],
+      'fragment': ['common', 'hash', 'openSimplex2', 'distance', 'screen'],
+      'vertex': ['common', 'hash', 'openSimplex2', 'distance', 'screen'],
       'uniforms': {
         'screen_size': null,
         'inverse_screen_size': null,
@@ -27,16 +21,16 @@ export class Shaders {
     },
 
     particles0: {
-      'fragment': ['particleFlat'],
-      'vertex': ['particleBasic'],
+      'fragment': ['common', 'hash', 'openSimplex2', 'distance', 'particleFlat'],
+      'vertex': ['common', 'hash', 'openSimplex2', 'distance', 'particleBasic'],
       'uniforms': {
         'mvp': null
       }
     },
 
     flat: {
-      'fragment': ['flat'],
-      'vertex': ['flat'],
+      'fragment': ['common', 'hash', 'openSimplex2', 'distance', 'flat'],
+      'vertex': ['common', 'hash', 'openSimplex2', 'distance', 'flat'],
       'uniforms': {
         'mvp': null,
         'mv': null
@@ -44,8 +38,8 @@ export class Shaders {
     },
 
     color: {
-      'fragment': ['color'],
-      'vertex': ['flat'],
+      'fragment': ['common', 'hash', 'openSimplex2', 'distance', 'color'],
+      'vertex': ['common', 'hash', 'openSimplex2', 'distance', 'flat'],
       'uniforms': {
         'mvp': null,
         'mv': null,
@@ -54,8 +48,8 @@ export class Shaders {
     },
 
     plane: {
-      'fragment': ['plane'],
-      'vertex': ['plane'],
+      'fragment': ['common', 'hash', 'openSimplex2', 'distance', 'plane'],
+      'vertex': ['common', 'hash', 'openSimplex2', 'distance', 'plane'],
       'uniforms': {
         'mvp': null,
         'mv': null,
@@ -65,8 +59,8 @@ export class Shaders {
     },
 
     taa: {
-      'fragment': ['taa'],
-      'vertex': ['taa'],
+      'fragment': ['common', 'hash', 'openSimplex2', 'distance', 'taa'],
+      'vertex': ['common', 'hash', 'openSimplex2', 'distance', 'taa'],
       'uniforms': {
         'samplerCurrent': null,
         'samplerMotion': null,
@@ -76,8 +70,8 @@ export class Shaders {
     },
 
     scene1: {
-      'fragment': ['scene1'],
-      'vertex': ['scene1'],
+      'fragment': ['common', 'hash', 'openSimplex2', 'distance', 'scene1'],
+      'vertex': ['common', 'hash', 'openSimplex2', 'distance', 'scene1'],
       'uniforms': {
         'inverseViewMatrix': null,
         'currentViewProjMatrix': null,
@@ -91,15 +85,32 @@ export class Shaders {
 
   static getShaderResources() {
     const output = {}
-    Object.assign(output, commonShaders)
 
     for (const programName in Shaders.#shaderPrograms) {
       const program = Shaders.#shaderPrograms[programName]
       for (const type in shaderTypes) {
-        program[`${type}UrL`] = []
-        for (const shaderName of program[type]) {
-          const url = `shaders/${shaderName}.${shaderTypes[type]}.glsl`
-          output[`${type}_${shaderName}`] = url
+        if (!(type in program)) {
+          continue
+        }
+
+        for (let i = 0; i < program[type].length; i++) {
+          const shaderName = program[type][i]
+          let resourceName
+          let resourceURL
+
+          if (i === (program[type].length - 1)) {
+            resourceURL = `shaders/${shaderName}.${shaderTypes[type]}.glsl`
+            resourceName = `${type}_${shaderName}`
+          } else {
+            resourceURL = `shaders/${shaderName}.glsl`
+            resourceName = `glsl_${shaderName}`
+          }
+
+          if (resourceName in output) {
+            continue
+          }
+
+          output[resourceName] = resourceURL
         }
       }
     }
@@ -141,26 +152,39 @@ export class Shaders {
     return program
   }
 
-  static #compileShader(shaderCode, shaderType) {
-    let shaderSource = `#version 300 es
+  static #getShaderSource(shaderType, shaders) {
+    let source = `#version 300 es
 precision highp int;
 precision highp float;
 
 `
 
-    for (const shaderName in commonShaders) {
-      shaderSource += `// ${shaderName}\n\n`
-      shaderSource += ResourceManager.get(shaderName)
-      shaderSource += '\n\n'
+    for (let i = 0; i < shaders.length; i++) {
+      const shaderName = shaders[i]
+      let resourceName
+
+      if (i === (shaders.length - 1)) {
+        resourceName = `${shaderType}_${shaderName}`
+      } else {
+        resourceName = `glsl_${shaderName}`
+      }
+
+      source += ResourceManager.get(resourceName)
     }
 
-    shaderSource += `// // //\n\n`
-    shaderSource += shaderCode
+    return source
+  }
 
-    if (shaderType === 'vertex') {
-      shaderType = GL.gl.VERTEX_SHADER
-    } else if (shaderType === 'fragment') {
-      shaderType = GL.gl.FRAGMENT_SHADER
+  static #compileShader(shaderSource, shaderType) {
+    switch (shaderType) {
+      case 'vertex':
+        shaderType = GL.gl.VERTEX_SHADER
+        break
+      case 'geometry':
+        shaderType = GL.gl.GEOMETRY_SHADER
+        break
+      default:
+        shaderType = GL.gl.FRAGMENT_SHADER
     }
 
     const shader = GL.gl.createShader(shaderType)
@@ -180,36 +204,25 @@ precision highp float;
   }
 
   static init() {
-    const compiledShader = { vertex: {}, fragment: {} }
-
     for (const programName in Shaders.#shaderPrograms) {
       const program = Shaders.#shaderPrograms[programName]
-      for (const shaderType in shaderTypes) {
-        for (const shaderName of program[shaderType]) {
-          if (shaderName in compiledShader[shaderType]) {
-            continue
-          }
-
-          compiledShader[shaderType][shaderName] = Shaders.#compileShader(ResourceManager.get(`${shaderType}_${shaderName}`), shaderType)
-        }
-      }
-    }
-    
-    for (const program in Shaders.#shaderPrograms) {
       const shaders = []
+
       for (const shaderType in shaderTypes) {
-        for (const shader in Shaders.#shaderPrograms[program][shaderType]) {
-          shaders.push(compiledShader[shaderType][Shaders.#shaderPrograms[program][shaderType][shader]])
+        if (shaderType in program) {
+          const shaderSource = Shaders.#getShaderSource(shaderType, program[shaderType])
+          const compiledShader = Shaders.#compileShader(shaderSource, shaderType)
+          shaders.push(compiledShader)
         }
       }
 
-      Shaders.#shaderPrograms[program].program = Shaders.#linkProgram(shaders, program.varyings)
-      if (!Shaders.#shaderPrograms[program].program) {
+      Shaders.#shaderPrograms[programName].program = Shaders.#linkProgram(shaders, programName.varyings)
+      if (!Shaders.#shaderPrograms[programName].program) {
         return false
       }
 
-      for (const uniform in Shaders.#shaderPrograms[program].uniforms) {
-        Shaders.#shaderPrograms[program].uniforms[uniform] = GL.gl.getUniformLocation(Shaders.#shaderPrograms[program].program, uniform)
+      for (const uniform in Shaders.#shaderPrograms[programName].uniforms) {
+        Shaders.#shaderPrograms[programName].uniforms[uniform] = GL.gl.getUniformLocation(Shaders.#shaderPrograms[programName].program, uniform)
       }
     }
   }

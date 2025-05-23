@@ -175,6 +175,7 @@ export class App {
   static init() {
     // Get list of used shaders
     const shaderResources = Shaders.getShaderResources()
+
     for (const name in shaderResources) {
       ResourceManager.add(name, shaderResources[name])
     }
