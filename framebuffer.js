@@ -193,91 +193,78 @@ export class Framebuffer {
   }
 
   static runBlurPasses(nPasses = 3) {
-    const threshold = 0.9
     const knee = 0.1
+    const threshold = 0.9
 
-    // Downsample 1x to 1/2x
+    nPasses = Math.max(0, Math.min(nPasses, 3))
 
-    let width = Math.ceil(Framebuffer.#width / 2)
-    let height = Math.ceil(Framebuffer.#height / 2)
+    const sizeDivisors = [2, 4, 8]
 
-    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferHalf)
-    GL.gl.viewport(0, 0, width, height)
+    const tex = [
+      Framebuffer.textureHDR,
+      Framebuffer.#textureHDRHalf,
+      Framebuffer.#textureHDRQuarter,
+      Framebuffer.#textureHDREighth
+    ]
+    const fbo = [
+      Framebuffer.#framebufferHalf,
+      Framebuffer.#framebufferQuarter,
+      Framebuffer.#framebufferEighth
+    ]
+
+    // Brightness pass + Downsample
+    const iw = Math.ceil(Framebuffer.#width / 2)
+    const ih = Math.ceil(Framebuffer.#height / 2)
+
+    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, fbo[0])
+    GL.gl.invalidateFramebuffer(GL.gl.DRAW_FRAMEBUFFER, [GL.gl.COLOR_ATTACHMENT0])
+    GL.gl.viewport(0, 0, iw, ih)
 
     GL.gl.activeTexture(GL.gl.TEXTURE0)
-    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureHDR)
+    GL.gl.bindTexture(GL.gl.TEXTURE_2D, tex[0])
 
     Shaders.useProgram('blur_brightness_pass')
     GL.gl.uniform1i(Shaders.uniform('blur_brightness_pass', 'color'), 0)
-    GL.gl.uniform2f(Shaders.uniform('blur_brightness_pass', 'halfPixel'), 0.5 / width, 0.5 / height)
+    GL.gl.uniform2f(Shaders.uniform('blur_brightness_pass', 'halfPixel'), 0.5 / iw, 0.5 / ih)
     GL.gl.uniform1f(Shaders.uniform('blur_brightness_pass', 'threshold'), threshold)
     GL.gl.uniform1f(Shaders.uniform('blur_brightness_pass', 'knee'), knee)
     Quad.draw()
 
-    // Downsample 1/2x to 1/4x
+    // Downsample passes
+    for (let i = 1; i <= nPasses; ++i) {
+      const w = Math.ceil(Framebuffer.#width  / sizeDivisors[i - 1])
+      const h = Math.ceil(Framebuffer.#height / sizeDivisors[i - 1])
 
-    width = Math.ceil(Framebuffer.#width / 4)
-    height = Math.ceil(Framebuffer.#height / 4)
+      GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, fbo[i])
+      GL.gl.viewport(0, 0, w, h)
+      GL.gl.invalidateFramebuffer(GL.gl.DRAW_FRAMEBUFFER, [GL.gl.COLOR_ATTACHMENT0])
 
-    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferQuarter)
-    GL.gl.viewport(0, 0, width, height)
+      GL.gl.bindTexture(GL.gl.TEXTURE_2D, tex[i - 1])
 
-    GL.gl.activeTexture(GL.gl.TEXTURE0)
-    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureHDRHalf)
+      Shaders.useProgram('blur_downsample')
+      GL.gl.uniform1i(Shaders.uniform('blur_downsample', 'color'), 0)
+      GL.gl.uniform2f(Shaders.uniform('blur_downsample', 'halfPixel'), 0.5 / w, 0.5 / h)
+      Quad.draw()
+    }
 
-    Shaders.useProgram('blur_downsample')
-    GL.gl.uniform1i(Shaders.uniform('blur_downsample', 'color'), 0)
-    GL.gl.uniform2f(Shaders.uniform('blur_downsample', 'halfPixel'), 0.5 / width, 0.5 / height)
-    Quad.draw()
+    // Upsample passes
+    for (let i = nPasses - 1; i >= 0; --i) {
+      const w = Math.ceil(Framebuffer.#width  / sizeDivisors[i])
+      const h = Math.ceil(Framebuffer.#height / sizeDivisors[i])
 
-    // Downsample 1/4x to 1/8x
+      GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, fbo[i])
+      GL.gl.invalidateFramebuffer(GL.gl.DRAW_FRAMEBUFFER, [GL.gl.COLOR_ATTACHMENT0])
+      GL.gl.viewport(0, 0, w, h)
 
-    width = Math.ceil(Framebuffer.#width / 8)
-    height = Math.ceil(Framebuffer.#height / 8)
+      GL.gl.bindTexture(GL.gl.TEXTURE_2D, tex[i + 1])
 
-    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferEighth)
-    GL.gl.viewport(0, 0, width, height)
-
-    GL.gl.activeTexture(GL.gl.TEXTURE0)
-    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureHDREighth)
-
-    Shaders.useProgram('blur_downsample')
-    GL.gl.uniform1i(Shaders.uniform('blur_downsample', 'color'), 0)
-    GL.gl.uniform2f(Shaders.uniform('blur_downsample', 'halfPixel'), 0.5 / width, 0.5 / height)
-    Quad.draw()
-
-    // Upsample 1/8x to 1/4x
-
-    width = Math.ceil(Framebuffer.#width / 4)
-    height = Math.ceil(Framebuffer.#height / 4)
-
-    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferQuarter)
-    GL.gl.viewport(0, 0, width, height)
-
-    GL.gl.activeTexture(GL.gl.TEXTURE0)
-    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureHDREighth)
-
-    Shaders.useProgram('blur_upsample')
-    GL.gl.uniform1i(Shaders.uniform('blur_upsample', 'color'), 0)
-    GL.gl.uniform2f(Shaders.uniform('blur_upsample', 'halfPixel'), 0.5 / width, 0.5 / height)
-    Quad.draw()
-
-    // Upsample 1/4x to 1/2x
-
-    width = Math.ceil(Framebuffer.#width / 2)
-    height = Math.ceil(Framebuffer.#height / 2)
-
-    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferHalf)
-    GL.gl.viewport(0, 0, width, height)
-
-    GL.gl.activeTexture(GL.gl.TEXTURE0)
-    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureHDRQuarter)
-
-    Shaders.useProgram('blur_upsample')
-    GL.gl.uniform1i(Shaders.uniform('blur_upsample', 'color'), 0)
-    GL.gl.uniform2f(Shaders.uniform('blur_upsample', 'halfPixel'), 0.5 / width, 0.5 / height)
-    Quad.draw()
+      Shaders.useProgram('blur_upsample')
+      GL.gl.uniform1i(Shaders.uniform('blur_upsample', 'color'), 0)
+      GL.gl.uniform2f(Shaders.uniform('blur_upsample', 'halfPixel'), 0.5 / w, 0.5 / h)
+      Quad.draw()
+    }
   }
+
 
   static get width() {
     return Framebuffer.#width
