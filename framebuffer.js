@@ -182,14 +182,25 @@ export class Framebuffer {
 
   }
 
-  static beginTemporalAAPass() {
+  static runTemporalAAPass() {
     GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferNoMotion[(this.#frameCounter + 2) % 3])
+    GL.gl.invalidateFramebuffer(GL.gl.DRAW_FRAMEBUFFER, [GL.gl.COLOR_ATTACHMENT0])
     GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
     GL.gl.viewport(0, 0, Framebuffer.#width, Framebuffer.#height)
-  }
 
-  static endTemporalAAPass() {
+    GL.gl.activeTexture(GL.gl.TEXTURE0)
+    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureHDR)
+    GL.gl.activeTexture(GL.gl.TEXTURE1)
+    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureMotion)
+    GL.gl.activeTexture(GL.gl.TEXTURE2)
+    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureAccum)
 
+    Shaders.useProgram('taa')
+    GL.gl.uniform1i(Shaders.uniform('taa', 'samplerCurrent'), 0)
+    GL.gl.uniform1i(Shaders.uniform('taa', 'samplerMotion'), 1)
+    GL.gl.uniform1i(Shaders.uniform('taa', 'samplerPrevious'), 2)
+    GL.gl.uniform2f(Shaders.uniform('taa', 'iTexel'), 1.0 / Framebuffer.width, 1.0 / Framebuffer.height)
+    Quad.draw()
   }
 
   static runBlurPasses(nPasses = 3) {
@@ -219,6 +230,7 @@ export class Framebuffer {
     GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, fbo[0])
     GL.gl.invalidateFramebuffer(GL.gl.DRAW_FRAMEBUFFER, [GL.gl.COLOR_ATTACHMENT0])
     GL.gl.viewport(0, 0, iw, ih)
+    GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
 
     GL.gl.activeTexture(GL.gl.TEXTURE0)
     GL.gl.bindTexture(GL.gl.TEXTURE_2D, tex[0])
@@ -238,6 +250,7 @@ export class Framebuffer {
       GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, fbo[i])
       GL.gl.viewport(0, 0, w, h)
       GL.gl.invalidateFramebuffer(GL.gl.DRAW_FRAMEBUFFER, [GL.gl.COLOR_ATTACHMENT0])
+      GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
 
       GL.gl.bindTexture(GL.gl.TEXTURE_2D, tex[i - 1])
 
@@ -254,6 +267,7 @@ export class Framebuffer {
 
       GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, fbo[i])
       GL.gl.invalidateFramebuffer(GL.gl.DRAW_FRAMEBUFFER, [GL.gl.COLOR_ATTACHMENT0])
+      GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
       GL.gl.viewport(0, 0, w, h)
 
       GL.gl.bindTexture(GL.gl.TEXTURE_2D, tex[i + 1])

@@ -33,7 +33,7 @@ export class App {
   static #getJitterOffset() {
     const x = App.#jitterPattern[(GL.frame % jitterSize) * 2 + 0]
     const y = App.#jitterPattern[(GL.frame % jitterSize) * 2 + 1]
-  
+
     return [x / Framebuffer.width, y / Framebuffer.height]
   }
 
@@ -83,10 +83,10 @@ export class App {
     Framebuffer.beginRenderPass()
 
     const inverseResolution = 1.0 / vec2.length(vec2.fromValues(Framebuffer.width, Framebuffer.height))
-    
+
     Shaders.useProgram('scene1')
     GL.gl.uniform1f(Shaders.uniform('scene1', 'time'), GL.time / 1000.0)
-    GL.gl.uniform3f(Shaders.uniform('scene1', 'resolution'), Framebuffer.width, Framebuffer.height, inverseResolution)    
+    GL.gl.uniform3f(Shaders.uniform('scene1', 'resolution'), Framebuffer.width, Framebuffer.height, inverseResolution)
     GL.gl.uniform1f(Shaders.uniform('scene1', 'fov'), App.#camera.fov)
     GL.gl.uniformMatrix4fv(Shaders.uniform('scene1', 'inverseViewMatrix'), false, App.#camera.inverseView)
     GL.gl.uniformMatrix4fv(Shaders.uniform('scene1', 'currentViewProjMatrix'), false, App.#camera.viewProjection)
@@ -108,12 +108,12 @@ export class App {
     GL.gl.disable(GL.gl.DEPTH_TEST)
 
     // draw cube
-    
+
     Shaders.useProgram('color')
     GL.gl.uniformMatrix4fv(Shaders.uniform('color', 'mvp'), false, App.#camera.viewProjection)
     GL.gl.uniformMatrix4fv(Shaders.uniform('color', 'mv'), false, App.#camera.view)
     GL.gl.uniform3f(Shaders.uniform('color', 'color'), 1.0, 0.0, 0.0)
-    Cube.drawOutlines()  
+    Cube.drawOutlines()
     */
 
     // draw particles
@@ -131,24 +131,7 @@ export class App {
     Framebuffer.endRenderPass()
 
     // temporal anti-aliasing
-
-    Framebuffer.beginTemporalAAPass()
-
-    GL.gl.activeTexture(GL.gl.TEXTURE0)
-    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureHDR)
-    GL.gl.activeTexture(GL.gl.TEXTURE1)
-    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureMotion)
-    GL.gl.activeTexture(GL.gl.TEXTURE2)
-    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureAccum)
-
-    Shaders.useProgram('taa')
-    GL.gl.uniform1i(Shaders.uniform('taa', 'samplerCurrent'), 0)
-    GL.gl.uniform1i(Shaders.uniform('taa', 'samplerMotion'), 1)
-    GL.gl.uniform1i(Shaders.uniform('taa', 'samplerPrevious'), 2)
-    GL.gl.uniform2f(Shaders.uniform('taa', 'iTexel'), 1.0 / Framebuffer.width, 1.0 / Framebuffer.height)
-    Quad.draw()
-
-    Framebuffer.endTemporalAAPass()
+    Framebuffer.runTemporalAAPass()
 
     // screen pass
 
