@@ -1,12 +1,18 @@
-const LEDMute0 = 0x10
-const LEDSolo0 = 0x08
-const LEDRecord0 = 0x00
-const LEDSelect0 = 0x18
-const LEDPlay = 0x5e
-const LEDPause = 0x5d
-const LEDRecord = 0x5f
-const LEDBack = 0x5b
-const LEDForward = 0x5c
+const KeyMute0 = 0x10
+const KeySolo0 = 0x08
+const KeyRecord0 = 0x00
+const KeySelect0 = 0x18
+const KeyPlay = 0x5e
+const KeyPause = 0x5d
+const KeyRecord = 0x5f
+const KeyFastBackwards = 0x5b
+const KeyFastForward = 0x5c
+const KeyLeftLeft = 0x2e
+const KeyRightRight = 0x2f
+const KeyUp = 0x60
+const KeyDown = 0x61
+const KeyLeft = 0x62
+const KeyRight = 0x63
 
 export class MIDIManager {
   static #midiAccess = null
@@ -29,7 +35,7 @@ export class MIDIManager {
       MIDIManager.#midiAccess = await navigator.requestMIDIAccess({ sysex: false })
       MIDIManager.#setupEventListeners()
       MIDIManager.#updateDeviceLists()
-      console.log('MIDI initialized successfully')
+      console.info('MIDI initialized successfully')
 
       return true
     } catch (error) {
@@ -77,7 +83,7 @@ export class MIDIManager {
     }
 
     MIDIManager.#midiAccess.onstatechange = event => {
-      console.log(`Device ${event.port.name} ${event.port.state}`)
+      console.info(`Device ${event.port.name} ${event.port.state}`)
       MIDIManager.#updateDeviceLists()
 
       if (event.port.state === 'connected' && event.port.type === 'input') {
@@ -109,17 +115,25 @@ export class MIDIManager {
 
     switch (commandType) {
       case 0xB0: { // Control Change (Encoders)
-        let value = MIDIManager.#encoderState.get(data1) || 0
+        const encoderId = data1 - 16
+        let value = MIDIManager.#encoderState.get(encoderId) || 0
         value += data2 > 64 ? -data2 + 64 : data2
-        console.debug('encoder', data1, value)
-        MIDIManager.#encoderState.set(data1, value)
+        MIDIManager.#encoderState.set(encoderId, value)
         break
       }
 
       case 0xE0: { // Pitch Bend (Sliders)
         const value = ((data2 << 7) | data1) / 16256
-        console.debug('slider', channel, value)
-        MIDIManager.#sliderState.set(channel, value)
+        MIDIManager.#sliderState.set(channel - 1, value)
+        break
+      }
+
+      case 0x90: {  // Note (Buttons)
+        if (data2 === 0) {
+          console.debug('MIDI key up', data1)
+        } else if (data2 === 127) {
+          console.debug('MIDI key down', data1)
+        }
         break
       }
 
