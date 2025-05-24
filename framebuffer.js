@@ -18,7 +18,7 @@ export class Framebuffer {
   static #framebufferMips = []
 
   static #frameCounter = 0
-  static #mipLevels = 4
+  static #mipLevels = 5
 
   static #setTextureParams(wrap, filter) {
     GL.gl.texParameteri(GL.gl.TEXTURE_2D, GL.gl.TEXTURE_WRAP_S, wrap)

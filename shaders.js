@@ -80,7 +80,8 @@ export class Shaders {
         'previousViewProjMatrix': null,
         'time': null,
         'resolution': null,
-        'fov': null
+        'fov': null,
+        'lightInfo': null
       }
     },
 

@@ -49,6 +49,13 @@ export class App {
 
     App.#jitterPattern = haltonSequence2D(jitterSize)
 
+    MIDIManager.setSliderValue(1, 0.0)
+    MIDIManager.setSliderValue(2, 7.5)
+    MIDIManager.setSliderValue(3, 1.5)
+    MIDIManager.setSliderValue(4, 0.0)
+    MIDIManager.setEncoderValue(5, 0.5)
+    MIDIManager.setEncoderValue(6, 0.5)
+
     return true
   }
 
@@ -88,13 +95,13 @@ export class App {
     GL.gl.uniform1f(Shaders.uniform('scene1', 'time'), GL.time / 1000.0)
     GL.gl.uniform3f(Shaders.uniform('scene1', 'resolution'), Framebuffer.width, Framebuffer.height, inverseResolution)
     GL.gl.uniform1f(Shaders.uniform('scene1', 'fov'), App.#camera.fov)
+    //GL.gl.uniform2f(Shaders.uniform('scene1', 'lightInfo'), MIDIManager.getSliderValue(5), MIDIManager.getSliderValue(6) * 100.0)
     GL.gl.uniformMatrix4fv(Shaders.uniform('scene1', 'inverseViewMatrix'), false, App.#camera.inverseView)
     GL.gl.uniformMatrix4fv(Shaders.uniform('scene1', 'currentViewProjMatrix'), false, App.#camera.viewProjection)
-    GL.gl.uniformMatrix4fv(Shaders.uniform('scene1', 'previousViewProjMatrix'), false, App.#camera.previousViewProjection)
+    GL.gl.uniformMatrix4fv(Shaders.uniform('scene1', 'previousViewProjMatrix'), false, App.#camera.previousViewProjectionNoJitter)
 
     Quad.draw()
 
-    /*
     // draw plane
 
     GL.gl.enable(GL.gl.DEPTH_TEST)
@@ -114,16 +121,15 @@ export class App {
     GL.gl.uniformMatrix4fv(Shaders.uniform('color', 'mv'), false, App.#camera.view)
     GL.gl.uniform3f(Shaders.uniform('color', 'color'), 1.0, 0.0, 0.0)
     Cube.drawOutlines()
-    */
 
     // draw particles
 
     /*
     GL.gl.enable(GL.gl.BLEND)
     GL.gl.blendFunc(GL.gl.ONE, GL.gl.ONE_MINUS_SRC_ALPHA)
-    // gl.blendFunc(gl.ONE, gl.ONE)
+    //GL.gl.blendFunc(GL.gl.ONE, GL.gl.ONE)
     Shaders.useProgram('particles0')
-    GL.gl.uniformMatrix4fv(Shaders.uniform('particles0', 'mvp'), false, App.#camera.mvp)
+    GL.gl.uniformMatrix4fv(Shaders.uniform('particles0', 'mvp'), false, App.#camera.viewProjectionNoJitter)
     App.#particles.draw()
     GL.gl.disable(GL.gl.BLEND)
     */

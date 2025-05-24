@@ -3,6 +3,8 @@ uniform float time;
 uniform float fov;
 uniform vec3 resolution;  // z = 1/length(res.xy)
 
+uniform vec2 lightInfo;
+
 layout(location = 0) out mediump vec3 outColor;
 layout(location = 1) out highp vec2 outMotion;
 
@@ -198,6 +200,7 @@ vec3 render(vec2 uv, vec3 rayOrigin, vec3 cx, vec3 cy, vec3 cz, float zoom, out 
     }
   }
 
+  //vec3 lightColor = colorize(lightInfo.x) * lightInfo.y;
   vec3 lightColor = colorize(time / 10.0) * (sin(time * tau * 50.0) * 2.5 + 7.5);
 
   if (objectId == 0u) {
