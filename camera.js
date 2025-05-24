@@ -13,20 +13,28 @@ export class Camera {
   #projection
   #viewProjection
   #previousViewProjection
+
+  #projectionNoJitter
+  #viewProjectionNoJitter
+  #previousViewProjectionNoJitter
+
   #view
   #inverseView
-  
+
   constructor(fov = Math.PI / 2.0, aspect = 1.0, near = 0.1, far = Infinity) {
     this.#fov = fov
     this.aspect = aspect
     this.#near = near
     this.#far = far
-      
+
     this.#jitterX = 0
     this.#jitterY = 0
 
     this.#projection = mat4.create()
     this.#viewProjection = mat4.create()
+    this.#projectionNoJitter = mat4.create()
+    this.#viewProjectionNoJitter = mat4.create()
+    this.#previousViewProjectionNoJitter = mat4.create()
     this.#view = mat4.create()
     this.#inverseView = mat4.create()
     this.#previousViewProjection = mat4.create()
@@ -53,7 +61,7 @@ export class Camera {
   get projection() {
     return this.#projection
   }
-  
+
   get viewProjection() {
     return this.#viewProjection
   }
@@ -61,11 +69,15 @@ export class Camera {
   get previousViewProjection() {
     return this.#previousViewProjection
   }
-  
+
+  get previousViewProjectionNoJitter() {
+    return this.#previousViewProjectionNoJitter
+  }
+
   get view() {
     return this.#view
   }
-  
+
   get inverseView() {
     return this.#inverseView
   }
@@ -89,6 +101,7 @@ export class Camera {
 
   updateProjection() {
     mat4.perspectiveNO(this.#projection, this.#fovy, this.#aspect, this.#near, this.#far)
+    mat4.copy(this.#projectionNoJitter, this.#projection)
 
     if (this.#jitterX !== 0 || this.#jitterY !== 0) {
       this.#projection[8] += this.#jitterX * 2.0
@@ -98,6 +111,9 @@ export class Camera {
 
   update() {
     mat4.copy(this.#previousViewProjection, this.#viewProjection)
+    mat4.copy(this.#previousViewProjectionNoJitter, this.#viewProjectionNoJitter)
+
     mat4.multiply(this.#viewProjection, this.#projection, this.#view)
+    mat4.multiply(this.#viewProjectionNoJitter, this.#projectionNoJitter, this.#view)
   }
 }
