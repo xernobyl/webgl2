@@ -88,6 +88,8 @@ export class App {
     // 1st pass
 
     Framebuffer.beginRenderPass()
+    GL.gl.enable(GL.gl.DEPTH_TEST)
+    GL.gl.depthFunc(GL.gl.ALWAYS)
 
     const inverseResolution = 1.0 / vec2.length(vec2.fromValues(Framebuffer.width, Framebuffer.height))
 
@@ -98,16 +100,18 @@ export class App {
     //GL.gl.uniform2f(Shaders.uniform('scene1', 'lightInfo'), MIDIManager.getSliderValue(5), MIDIManager.getSliderValue(6) * 100.0)
     GL.gl.uniformMatrix4fv(Shaders.uniform('scene1', 'inverseViewMatrix'), false, App.#camera.inverseView)
     GL.gl.uniformMatrix4fv(Shaders.uniform('scene1', 'currentViewProjMatrix'), false, App.#camera.viewProjection)
-    GL.gl.uniformMatrix4fv(Shaders.uniform('scene1', 'previousViewProjMatrix'), false, App.#camera.previousViewProjectionNoJitter)
+    GL.gl.uniformMatrix4fv(Shaders.uniform('scene1', 'previousViewProjMatrix'), false, App.#camera.previousViewProjection)
 
     Quad.draw()
 
     // draw plane
 
-    GL.gl.enable(GL.gl.DEPTH_TEST)
+    //GL.gl.enable(GL.gl.DEPTH_TEST)
+    GL.gl.depthFunc(GL.gl.LESS)
     GL.gl.enable(GL.gl.CULL_FACE)
     Shaders.useProgram('plane')
     GL.gl.uniformMatrix4fv(Shaders.uniform('plane', 'mvp'), false, App.#camera.viewProjection)
+    GL.gl.uniformMatrix4fv(Shaders.uniform('plane', 'previousMVP'), false, App.#camera.previousViewProjection)
     GL.gl.uniformMatrix4fv(Shaders.uniform('plane', 'mv'), false, App.#camera.view)
     GL.gl.uniform2f(Shaders.uniform('plane', 'bias'), MIDIManager.getSliderValue(1), MIDIManager.getSliderValue(2))
     App.#plane.draw()

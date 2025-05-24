@@ -2,6 +2,7 @@ uniform mat4 inverseViewMatrix, currentViewProjMatrix, previousViewProjMatrix;
 uniform float time;
 uniform float fov;
 uniform vec3 resolution;  // z = 1/length(res.xy)
+uniform vec2 depthScaleBias;
 
 uniform vec2 lightInfo;
 
@@ -267,7 +268,7 @@ void main() {
   vec3 pos;
   outColor = render(uv, rayOrigin, cx, cy, cz, zoom, pos);
 
-  // Motion for TAA
+  // Motion vector for TAA
   vec4 currentClipPos = currentViewProjMatrix * vec4(pos, 1.0);
   vec2 currentNDC = currentClipPos.xy / currentClipPos.w;
   vec2 currentSS = currentNDC * 0.5 + 0.5;
@@ -277,4 +278,7 @@ void main() {
   vec2 previousSS = previousNDC * 0.5 + 0.5;
 
   outMotion = previousSS - currentSS;
+
+  // Depth output
+  gl_FragDepth = 0.5 * (currentClipPos.z / currentClipPos.w) + 0.5;
 }

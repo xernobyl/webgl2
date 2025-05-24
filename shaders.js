@@ -54,6 +54,7 @@ export class Shaders {
       'vertex': ['common', 'hash', 'openSimplex2', 'distance', 'plane'],
       'uniforms': {
         'mvp': null,
+        'previousMVP': null,
         'mv': null,
         'color': null,
         'bias': null

@@ -175,7 +175,7 @@ export class Framebuffer {
     GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebuffer[this.#frameCounter])
     GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0, GL.gl.COLOR_ATTACHMENT1])
     GL.gl.viewport(0, 0, Framebuffer.#width, Framebuffer.#height)
-    GL.gl.clear(GL.gl.DEPTH_BUFFER_BIT)
+    // GL.gl.clear(GL.gl.DEPTH_BUFFER_BIT)
   }
 
   static endRenderPass() {
