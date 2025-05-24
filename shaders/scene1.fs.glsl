@@ -211,8 +211,10 @@ vec3 render(vec2 uv, vec3 rayOrigin, vec3 cx, vec3 cy, vec3 cz, float zoom, out 
   BaseMaterial material;
 
   if (objectId == 1u) {
+    float n = openSimplex2_Conventional(rayPos * 0.5).w * 0.5 + 0.5;
+
     material.albedo = vec3(0.5, 0.5, 0.5);
-    material.roughness = 0.95;
+    material.roughness = n;
     material.metallic = 0.0;
   }
 
