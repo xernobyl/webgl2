@@ -12,7 +12,7 @@ export class MIDIManager {
   static #midiAccess = null
   static #inputs = new Map()
   static #outputs = new Map()
-  
+
   static #sliderState = new Map()
   static #encoderState = new Map()
 
@@ -42,8 +42,16 @@ export class MIDIManager {
     return MIDIManager.#sliderState.get(slider) || 0
   }
 
+  static setSliderValue(slider, value) {
+    MIDIManager.#sliderState.set(slider, value)
+  }
+
   static getEncoderValue(encoder) {
     return MIDIManager.#encoderState.get(encoder) || 0
+  }
+
+  static setEncoderValue(encoder, value) {
+    return MIDIManager.#encoderState.set(encoder, value)
   }
 
   static #sendMIDIMessage(message) {
