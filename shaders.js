@@ -10,13 +10,15 @@ const shaderTypes = {
 export class Shaders {
   static #shaderPrograms = {
     screen: {
-      'fragment': ['common', 'hash', 'openSimplex2', 'distance', 'screen'],
-      'vertex': ['common', 'hash', 'openSimplex2', 'distance', 'screen'],
+      'fragment': ['common', 'blur', 'screen'],
+      'vertex': ['screen'],
       'uniforms': {
         'screen_size': null,
         'inverse_screen_size': null,
         'time': null,
-        'screen': null
+        'screen': null,
+        'bloom': null,
+        'halfPixel': null
       }
     },
 
@@ -79,6 +81,35 @@ export class Shaders {
         'time': null,
         'resolution': null,
         'fov': null
+      }
+    },
+
+    blur_brightness: {
+      'fragment': ['blur', 'blur_brightness'],
+      'vertex': ['quad_basic'],
+      'uniforms': {
+        'color': null,
+        'halfPixel': null,
+        'threshold': null,
+        'knee': null
+      }
+    },
+
+    blur_downsample: {
+      'fragment': ['blur', 'blur_downsample'],
+      'vertex': ['quad_basic'],
+      'uniforms': {
+        'color': null,
+        'halfPixel': null
+      }
+    },
+
+    blur_upsample: {
+      'fragment': ['blur', 'blur_upsample'],
+      'vertex': ['quad_basic'],
+      'uniforms': {
+        'color': null,
+        'halfPixel': null
       }
     }
   }
@@ -169,7 +200,12 @@ precision highp float;
         resourceName = `glsl_${shaderName}`
       }
 
-      source += ResourceManager.get(resourceName)
+      const sourceBit = ResourceManager.get(resourceName)
+      if (sourceBit === null) {
+        throw new Error(`resource "${resourceName}" not found`)
+      }
+
+      source += sourceBit
     }
 
     return source
