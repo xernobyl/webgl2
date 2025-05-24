@@ -209,12 +209,13 @@ export class Framebuffer {
 
     nPasses = Math.max(0, Math.min(nPasses, 2))
 
-    const tex = [
+    const textureMips = [
       Framebuffer.#textureHDRHalf,
       Framebuffer.#textureHDRQuarter,
       Framebuffer.#textureHDREighth
     ]
-    const fbo = [
+    const framebufferMips = [
+      Framebuffer.#framebufferHalf,
       Framebuffer.#framebufferQuarter,
       Framebuffer.#framebufferEighth
     ]
@@ -248,12 +249,12 @@ export class Framebuffer {
       w = Math.ceil(Framebuffer.#width * scale)
       h = Math.ceil(Framebuffer.#height * scale)
 
-      GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, fbo[i])
+      GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, framebufferMips[i + 1])
       GL.gl.viewport(0, 0, w, h)
       GL.gl.invalidateFramebuffer(GL.gl.DRAW_FRAMEBUFFER, [GL.gl.COLOR_ATTACHMENT0])
       GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
 
-      GL.gl.bindTexture(GL.gl.TEXTURE_2D, tex[i])
+      GL.gl.bindTexture(GL.gl.TEXTURE_2D, textureMips[i])
 
       Shaders.useProgram('blur_downsample')
       GL.gl.uniform1i(Shaders.uniform('blur_downsample', 'color'), 0)
@@ -261,43 +262,26 @@ export class Framebuffer {
       Quad.draw()
     }
 
-    // Upsample pass 0
-    pw = w
-    ph = h
-    let scale = 1.0 / 4.0
-    w = Math.ceil(Framebuffer.#width * scale)
-    h = Math.ceil(Framebuffer.#height * scale)
+    // Upsample passes
+    for (let i = nPasses - 1; i >= 0; i--) {
+      pw = w
+      ph = h
+      const scale = 1.0 / (1 << (i + 1))
+      w = Math.ceil(Framebuffer.#width * scale)
+      h = Math.ceil(Framebuffer.#height * scale)
 
-    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferQuarter)
-    GL.gl.invalidateFramebuffer(GL.gl.DRAW_FRAMEBUFFER, [GL.gl.COLOR_ATTACHMENT0])
-    GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
-    GL.gl.viewport(0, 0, w, h)
+      GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, framebufferMips[i])
+      GL.gl.invalidateFramebuffer(GL.gl.DRAW_FRAMEBUFFER, [GL.gl.COLOR_ATTACHMENT0])
+      GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
+      GL.gl.viewport(0, 0, w, h)
 
-    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureHDREighth)
+      GL.gl.bindTexture(GL.gl.TEXTURE_2D, textureMips[i + 1])
 
-    Shaders.useProgram('blur_upsample')
-    GL.gl.uniform1i(Shaders.uniform('blur_upsample', 'color'), 0)
-    GL.gl.uniform2f(Shaders.uniform('blur_upsample', 'halfPixel'), 1.0 / pw, 1.0 / ph)
-    Quad.draw()
-
-    // Upsample pass 1
-    pw = w
-    ph = h
-    scale = 1.0 / 2.0
-    w = Math.ceil(Framebuffer.#width * scale)
-    h = Math.ceil(Framebuffer.#height * scale)
-
-    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferHalf)
-    GL.gl.invalidateFramebuffer(GL.gl.DRAW_FRAMEBUFFER, [GL.gl.COLOR_ATTACHMENT0])
-    GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
-    GL.gl.viewport(0, 0, w, h)
-
-    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureHDRQuarter)
-
-    Shaders.useProgram('blur_upsample')
-    GL.gl.uniform1i(Shaders.uniform('blur_upsample', 'color'), 0)
-    GL.gl.uniform2f(Shaders.uniform('blur_upsample', 'halfPixel'), 1.0 / pw, 1.0 / ph)
-    Quad.draw()
+      Shaders.useProgram('blur_upsample')
+      GL.gl.uniform1i(Shaders.uniform('blur_upsample', 'color'), 0)
+      GL.gl.uniform2f(Shaders.uniform('blur_upsample', 'halfPixel'), 1.0 / pw, 1.0 / ph)
+      Quad.draw()
+    }
   }
 
 
