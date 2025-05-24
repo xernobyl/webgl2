@@ -10,18 +10,15 @@ export class Framebuffer {
 
   static #textureHDR = []
   static #textureMotion
-  static #textureHDRHalf
-  static #textureHDRQuarter
-  static #textureHDREighth
+  static #textureMips = []
   static #textureDepth
 
   static #framebuffer = []
   static #framebufferNoMotion = []
-  static #framebufferHalf
-  static #framebufferQuarter
-  static #framebufferEighth
+  static #framebufferMips = []
 
   static #frameCounter = 0
+  static #mipLevels = 4
 
   static #setTextureParams(wrap, filter) {
     GL.gl.texParameteri(GL.gl.TEXTURE_2D, GL.gl.TEXTURE_WRAP_S, wrap)
@@ -53,13 +50,19 @@ export class Framebuffer {
     throw new Error(`unexpected checkFramebufferStatus: ${status}`)
   }
 
-  static init(width, height) {
+  static init(width, height, mipLevels) {
     if (width <= 0.0 || height <= 0.0 || width === Framebuffer.#width && height === Framebuffer.#height) {
       console.debug('Framebuffer resize: Ignoring')
       return true
     }
 
     const isNew = Framebuffer.#width === undefined
+
+    if (!mipLevels) {
+      mipLevels = Framebuffer.#mipLevels
+    } else {
+      Framebuffer.#mipLevels = mipLevels
+    }
 
     if (isNew) {
       console.debug('Framebuffer resize: New')
@@ -72,9 +75,10 @@ export class Framebuffer {
         Framebuffer.#framebufferNoMotion[i] = GL.gl.createFramebuffer()
       }
 
-      Framebuffer.#framebufferHalf = GL.gl.createFramebuffer()
-      Framebuffer.#framebufferQuarter = GL.gl.createFramebuffer()
-      Framebuffer.#framebufferEighth = GL.gl.createFramebuffer()
+      // Create mip framebuffers
+      for (let i = 0; i < mipLevels; i++) {
+        Framebuffer.#framebufferMips[i] = GL.gl.createFramebuffer()
+      }
     } else {
       console.debug('Framebuffer resize: Resizing')
 
@@ -83,9 +87,12 @@ export class Framebuffer {
       }
 
       GL.gl.deleteTexture(Framebuffer.#textureMotion)
-      GL.gl.deleteTexture(Framebuffer.#textureHDRHalf)
-      GL.gl.deleteTexture(Framebuffer.#textureHDRQuarter)
-      GL.gl.deleteTexture(Framebuffer.#textureHDREighth)
+
+      // Delete existing mip textures
+      for (let i = 0; i < Framebuffer.#textureMips.length; i++) {
+        GL.gl.deleteTexture(Framebuffer.#textureMips[i])
+      }
+
       GL.gl.deleteTexture(Framebuffer.#textureDepth)
     }
 
@@ -94,9 +101,12 @@ export class Framebuffer {
     }
 
     Framebuffer.#textureMotion = GL.gl.createTexture()
-    Framebuffer.#textureHDRHalf = GL.gl.createTexture()
-    Framebuffer.#textureHDRQuarter = GL.gl.createTexture()
-    Framebuffer.#textureHDREighth = GL.gl.createTexture()
+
+    // Create mip textures
+    for (let i = 0; i < mipLevels; i++) {
+      Framebuffer.#textureMips[i] = GL.gl.createTexture()
+    }
+
     Framebuffer.#textureDepth = GL.gl.createTexture()
 
     Framebuffer.#width = width
@@ -114,17 +124,16 @@ export class Framebuffer {
     GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.RG16F, width, height)
     Framebuffer.#setTextureParams(GL.gl.CLAMP_TO_EDGE, GL.gl.LINEAR)
 
-    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureHDRHalf)
-    GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.R11F_G11F_B10F, Math.ceil(width / 2), Math.ceil(height / 2))
-    Framebuffer.#setTextureParams(GL.gl.CLAMP_TO_EDGE, GL.gl.LINEAR)
+    // Initialize mip textures
+    for (let i = 0; i < mipLevels; i++) {
+      const scale = 1.0 / (1 << (i + 1))
+      const w = Math.ceil(width * scale)
+      const h = Math.ceil(height * scale)
 
-    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureHDRQuarter)
-    GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.R11F_G11F_B10F, Math.ceil(width / 4), Math.ceil(height / 4))
-    Framebuffer.#setTextureParams(GL.gl.CLAMP_TO_EDGE, GL.gl.LINEAR)
-
-    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureHDREighth)
-    GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.R11F_G11F_B10F, Math.ceil(width / 8), Math.ceil(height / 8))
-    Framebuffer.#setTextureParams(GL.gl.CLAMP_TO_EDGE, GL.gl.LINEAR)
+      GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureMips[i])
+      GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.R11F_G11F_B10F, w, h)
+      Framebuffer.#setTextureParams(GL.gl.CLAMP_TO_EDGE, GL.gl.LINEAR)
+    }
 
     GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureDepth)
     GL.gl.texStorage2D(GL.gl.TEXTURE_2D, 1, GL.gl.DEPTH_COMPONENT24, width, height)
@@ -148,22 +157,13 @@ export class Framebuffer {
       }
     }
 
-    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferHalf)
-    GL.gl.framebufferTexture2D(GL.gl.DRAW_FRAMEBUFFER, GL.gl.COLOR_ATTACHMENT0, GL.gl.TEXTURE_2D, Framebuffer.#textureHDRHalf, 0)
-    if (!Framebuffer.#checkFramebufferStatus()) {
-      return false
-    }
-
-    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferQuarter)
-    GL.gl.framebufferTexture2D(GL.gl.DRAW_FRAMEBUFFER, GL.gl.COLOR_ATTACHMENT0, GL.gl.TEXTURE_2D, Framebuffer.#textureHDRQuarter, 0)
-    if (!Framebuffer.#checkFramebufferStatus()) {
-      return false
-    }
-
-    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferEighth)
-    GL.gl.framebufferTexture2D(GL.gl.DRAW_FRAMEBUFFER, GL.gl.COLOR_ATTACHMENT0, GL.gl.TEXTURE_2D, Framebuffer.#textureHDREighth, 0)
-    if (!Framebuffer.#checkFramebufferStatus()) {
-      return false
+    // Initialize mip framebuffers
+    for (let i = 0; i < mipLevels; i++) {
+      GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferMips[i])
+      GL.gl.framebufferTexture2D(GL.gl.DRAW_FRAMEBUFFER, GL.gl.COLOR_ATTACHMENT0, GL.gl.TEXTURE_2D, Framebuffer.#textureMips[i], 0)
+      if (!Framebuffer.#checkFramebufferStatus()) {
+        return false
+      }
     }
 
     return true
@@ -203,22 +203,15 @@ export class Framebuffer {
     Quad.draw()
   }
 
-  static runBlurPasses(nPasses = 2) {
+  static runBlurPasses(nPasses) {
+    if (!nPasses) {
+      nPasses = Framebuffer.#mipLevels - 1
+    }
+
     const knee = 0.1
     const threshold = 1.0
 
-    nPasses = Math.max(0, Math.min(nPasses, 2))
-
-    const textureMips = [
-      Framebuffer.#textureHDRHalf,
-      Framebuffer.#textureHDRQuarter,
-      Framebuffer.#textureHDREighth
-    ]
-    const framebufferMips = [
-      Framebuffer.#framebufferHalf,
-      Framebuffer.#framebufferQuarter,
-      Framebuffer.#framebufferEighth
-    ]
+    nPasses = Math.max(0, Math.min(nPasses, Framebuffer.#mipLevels - 1))
 
     // Brightness pass + Downsample
     let pw = Framebuffer.#width
@@ -226,7 +219,7 @@ export class Framebuffer {
     let w = Math.ceil(Framebuffer.#width / 2)
     let h = Math.ceil(Framebuffer.#height / 2)
 
-    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferHalf)
+    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferMips[0])
     GL.gl.invalidateFramebuffer(GL.gl.DRAW_FRAMEBUFFER, [GL.gl.COLOR_ATTACHMENT0])
     GL.gl.viewport(0, 0, w, h)
     GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
@@ -249,12 +242,12 @@ export class Framebuffer {
       w = Math.ceil(Framebuffer.#width * scale)
       h = Math.ceil(Framebuffer.#height * scale)
 
-      GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, framebufferMips[i + 1])
+      GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferMips[i + 1])
       GL.gl.viewport(0, 0, w, h)
       GL.gl.invalidateFramebuffer(GL.gl.DRAW_FRAMEBUFFER, [GL.gl.COLOR_ATTACHMENT0])
       GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
 
-      GL.gl.bindTexture(GL.gl.TEXTURE_2D, textureMips[i])
+      GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureMips[i])
 
       Shaders.useProgram('blur_downsample')
       GL.gl.uniform1i(Shaders.uniform('blur_downsample', 'color'), 0)
@@ -270,12 +263,12 @@ export class Framebuffer {
       w = Math.ceil(Framebuffer.#width * scale)
       h = Math.ceil(Framebuffer.#height * scale)
 
-      GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, framebufferMips[i])
+      GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferMips[i])
       GL.gl.invalidateFramebuffer(GL.gl.DRAW_FRAMEBUFFER, [GL.gl.COLOR_ATTACHMENT0])
       GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
       GL.gl.viewport(0, 0, w, h)
 
-      GL.gl.bindTexture(GL.gl.TEXTURE_2D, textureMips[i + 1])
+      GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureMips[i + 1])
 
       Shaders.useProgram('blur_upsample')
       GL.gl.uniform1i(Shaders.uniform('blur_upsample', 'color'), 0)
@@ -283,7 +276,6 @@ export class Framebuffer {
       Quad.draw()
     }
   }
-
 
   static get width() {
     return Framebuffer.#width
@@ -309,16 +301,8 @@ export class Framebuffer {
     return Framebuffer.#textureMotion
   }
 
-  static get textureHDRHalf() {
-    return Framebuffer.#textureHDRHalf
-  }
-
-  static get textureHDRQuarter() {
-    return Framebuffer.#textureHDRQuarter
-  }
-
-  static get textureHDREighth() {
-    return Framebuffer.#textureHDREighth
+  static get textureHalf() {
+    return Framebuffer.#textureMips[0]
   }
 
   static get textureDepth() {

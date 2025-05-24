@@ -146,7 +146,7 @@ export class App {
     GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureTAA)
 
     GL.gl.activeTexture(GL.gl.TEXTURE1)
-    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureHDRHalf)
+    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureHalf)
 
     Shaders.useProgram('screen')
     GL.gl.uniform1f(Shaders.uniform('screen', 'time'), GL.time)
