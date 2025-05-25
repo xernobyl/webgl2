@@ -92,9 +92,10 @@ export class Shaders {
       'vertex': ['quad_basic'],
       'uniforms': {
         'color': null,
-        'halfPixel': null,
+        'texelSize': null,
         'threshold': null,
-        'knee': null
+        'knee': null,
+        'uRadius': null
       }
     },
 
@@ -103,7 +104,8 @@ export class Shaders {
       'vertex': ['quad_basic'],
       'uniforms': {
         'color': null,
-        'halfPixel': null
+        'texelSize': null,
+        'uRadius': null
       }
     },
 
@@ -112,7 +114,8 @@ export class Shaders {
       'vertex': ['quad_basic'],
       'uniforms': {
         'color': null,
-        'halfPixel': null
+        'texelSize': null,
+        'uRadius': null
       }
     }
   }

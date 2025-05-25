@@ -49,7 +49,7 @@ export class App {
 
     App.#jitterPattern = haltonSequence2D(jitterSize)
 
-    MIDIManager.setSliderValue(1, 0.0)
+    MIDIManager.setSliderValue(0, 0.25)
     MIDIManager.setSliderValue(2, 7.5)
     MIDIManager.setSliderValue(3, 1.5)
     MIDIManager.setSliderValue(4, 0.0)
@@ -145,7 +145,7 @@ export class App {
     Framebuffer.runTemporalAAPass()
 
     // generate blur
-    Framebuffer.runBlurPasses()
+    Framebuffer.runBlurPasses(null, 1.0)
 
     // screen pass
 

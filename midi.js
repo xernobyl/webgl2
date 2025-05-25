@@ -124,6 +124,7 @@ export class MIDIManager {
 
       case 0xE0: { // Pitch Bend (Sliders)
         const value = ((data2 << 7) | data1) / 16256
+        console.debug(`Slider ${channel - 1}: ${value}`)
         MIDIManager.#sliderState.set(channel - 1, value)
         break
       }

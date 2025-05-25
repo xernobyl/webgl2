@@ -203,7 +203,7 @@ export class Framebuffer {
     Quad.draw()
   }
 
-  static runBlurPasses(nPasses) {
+  static runBlurPasses(nPasses, radius) {
     if (!nPasses) {
       nPasses = Framebuffer.#mipLevels - 1
     }
@@ -229,9 +229,10 @@ export class Framebuffer {
 
     Shaders.useProgram('blur_brightness')
     GL.gl.uniform1i(Shaders.uniform('blur_brightness', 'color'), 0)
-    GL.gl.uniform2f(Shaders.uniform('blur_brightness', 'halfPixel'), 1.0 / pw, 1.0 / ph)
+    GL.gl.uniform2f(Shaders.uniform('blur_brightness', 'texelSize'), 1.0 / pw, 1.0 / ph)
     GL.gl.uniform1f(Shaders.uniform('blur_brightness', 'threshold'), threshold)
     GL.gl.uniform1f(Shaders.uniform('blur_brightness', 'knee'), knee)
+    GL.gl.uniform1f(Shaders.uniform('blur_brightness', 'uRadius'), radius)
     Quad.draw()
 
     // Downsample passes
@@ -251,7 +252,8 @@ export class Framebuffer {
 
       Shaders.useProgram('blur_downsample')
       GL.gl.uniform1i(Shaders.uniform('blur_downsample', 'color'), 0)
-      GL.gl.uniform2f(Shaders.uniform('blur_downsample', 'halfPixel'), 1.0 / pw, 1.0 / ph)
+      GL.gl.uniform2f(Shaders.uniform('blur_downsample', 'texelSize'), 1.0 / pw, 1.0 / ph)
+      GL.gl.uniform1f(Shaders.uniform('blur_downsample', 'uRadius'), radius)
       Quad.draw()
     }
 
@@ -272,7 +274,8 @@ export class Framebuffer {
 
       Shaders.useProgram('blur_upsample')
       GL.gl.uniform1i(Shaders.uniform('blur_upsample', 'color'), 0)
-      GL.gl.uniform2f(Shaders.uniform('blur_upsample', 'halfPixel'), 1.0 / pw, 1.0 / ph)
+      GL.gl.uniform2f(Shaders.uniform('blur_upsample', 'texelSize'), 1.0 / pw, 1.0 / ph)
+      GL.gl.uniform1f(Shaders.uniform('blur_upsample', 'uRadius'), radius)
       Quad.draw()
     }
   }
