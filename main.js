@@ -18,7 +18,7 @@ export class App {
   static #particles = null
   static #plane = null
   static #camera = new Camera(Math.PI / 2.0, 1.0, 0.1, 100.0)
-  static #frameBufferScale = 1.0
+  static #frameBufferScale = 2.0
   static #jitterPattern
 
   static set frameBufferScale(value) {
@@ -67,7 +67,7 @@ export class App {
     App.#camera.fov = Math.PI * 0.5 * (1.0 - MIDIManager.getSliderValue(4))
 
     const [jitterX, jitterY] = App.#getJitterOffset()
-    App.#camera.setJitter(jitterX, jitterY)
+    App.#camera.setJitter(jitterX / Framebuffer.width, jitterY / Framebuffer.height)
 
     const phase = GL.time * 0.0005 //MIDIManager.getSliderValue(1) * Math.PI * 2.0
     const rad = 7.5 //MIDIManager.getSliderValue(2) * 20.0
@@ -96,6 +96,7 @@ export class App {
     Shaders.useProgram('scene1')
     GL.gl.uniform1f(Shaders.uniform('scene1', 'time'), GL.time / 1000.0)
     GL.gl.uniform3f(Shaders.uniform('scene1', 'resolution'), Framebuffer.width, Framebuffer.height, inverseResolution)
+    GL.gl.uniform2f(Shaders.uniform('scene1', 'jitter'), jitterX, jitterY)
     GL.gl.uniform1f(Shaders.uniform('scene1', 'fov'), App.#camera.fov)
     //GL.gl.uniform2f(Shaders.uniform('scene1', 'lightInfo'), MIDIManager.getSliderValue(5), MIDIManager.getSliderValue(6) * 100.0)
     GL.gl.uniformMatrix4fv(Shaders.uniform('scene1', 'inverseViewMatrix'), false, App.#camera.inverseView)

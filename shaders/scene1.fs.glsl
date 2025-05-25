@@ -3,6 +3,7 @@ uniform float time;
 uniform float fov;
 uniform vec3 resolution;  // z = 1/length(res.xy)
 uniform vec2 depthScaleBias;
+uniform vec2 jitter;
 
 uniform vec2 lightInfo;
 
@@ -256,7 +257,7 @@ void main() {
   halfPixelScale = thf * resolution.z;  // half a pixel at distance
 
   // Could come from the vertex shader
-  vec2 uv = gl_FragCoord.xy * 2.0 - resolution.xy;
+  vec2 uv = (gl_FragCoord.xy + jitter) * 2.0 - resolution.xy;
   uv *= resolution.z;
 
   // Extract the camera's right, up, and forward vectors, and position from the inverse view matrix
@@ -270,15 +271,12 @@ void main() {
 
   // Motion vector for TAA
   vec4 currentClipPos = currentViewProjMatrix * vec4(pos, 1.0);
-  vec2 currentNDC = currentClipPos.xy / currentClipPos.w;
-  vec2 currentSS = currentNDC * 0.5 + 0.5;
-
+  vec3 currentNDC = currentClipPos.xyz / currentClipPos.w;
   vec4 previousClipPos = previousViewProjMatrix * vec4(pos, 1.0);
   vec2 previousNDC = previousClipPos.xy / previousClipPos.w;
-  vec2 previousSS = previousNDC * 0.5 + 0.5;
 
-  outMotion = previousSS - currentSS;
+  outMotion = (previousNDC - currentNDC.xy) * 0.5 + 0.5;
 
   // Depth output
-  gl_FragDepth = 0.5 * (currentClipPos.z / currentClipPos.w) + 0.5;
+  gl_FragDepth = currentNDC.z;
 }

@@ -1,3 +1,4 @@
+// values range between -0.5 and 0.5
 export function haltonSequence2D(count, base1 = 2, base2 = 3) {
   function halton(index, base) {
     let result = 0
@@ -13,8 +14,8 @@ export function haltonSequence2D(count, base1 = 2, base2 = 3) {
 
   const points = new Array(count * 2)
   for (let i = 1; i <= count; i++) {
-    points[i * 2 - 2] = halton(i, base1)
-    points[i * 2 - 1] = halton(i, base2)
+    points[i * 2 - 2] = halton(i, base1) - 0.5
+    points[i * 2 - 1] = halton(i, base2) - 0.5
   }
 
   return points

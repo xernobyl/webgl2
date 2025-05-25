@@ -104,8 +104,8 @@ export class Camera {
     mat4.copy(this.#projectionNoJitter, this.#projection)
 
     if (this.#jitterX !== 0 || this.#jitterY !== 0) {
-      this.#projection[8] += this.#jitterX * 2.0
-      this.#projection[9] += this.#jitterY * 2.0
+      this.#projection[8] = this.#jitterX
+      this.#projection[9] = this.#jitterY
     }
   }
 

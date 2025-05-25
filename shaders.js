@@ -82,7 +82,8 @@ export class Shaders {
         'time': null,
         'resolution': null,
         'fov': null,
-        'lightInfo': null
+        'lightInfo': null,
+        'jitter': null
       }
     },
 
