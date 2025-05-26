@@ -219,7 +219,7 @@ vec3 render(vec2 uv, vec3 rayOrigin, vec3 cx, vec3 cy, vec3 cz, float zoom, out 
     float n = openSimplex2_Conventional(rayPos * 0.5).w * 0.5 + 0.5;
 
     material.albedo = vec3(1.0, 1.0, 1.0);
-    material.roughness = 0.025;//n;
+    material.roughness = n;
     material.metallic = 0.0;
   }
 
