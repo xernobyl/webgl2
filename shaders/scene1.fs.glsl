@@ -21,7 +21,7 @@ const float holeRadius = 1.0 / 32.0;
 float halfPixelScale;
 lowp uint objectId;
 
-vec3 light_pos;
+vec3 light0Pos;
 
 float rdSph(vec3 p, vec4 rid) {
   vec4 h = hash4(rid);
@@ -101,7 +101,7 @@ float warehouse(vec3 p, bool include_lights, out uint object) {
   if (include_lights) {
     float light_objs[1];
 
-    light_objs[0] = sdSphere(p - light_pos, 0.125);
+    light_objs[0] = sdSphere(p - light0Pos, 0.125);
 
     for (uint i = 0u; i < 1u; ++i) {
       if (light_objs[i] < min_dist) {
@@ -218,8 +218,8 @@ vec3 render(vec2 uv, vec3 rayOrigin, vec3 cx, vec3 cy, vec3 cz, float zoom, out 
   if (objectId == 1u) {
     float n = openSimplex2_Conventional(rayPos * 0.5).w * 0.5 + 0.5;
 
-    material.albedo = vec3(0.5, 0.5, 0.5);
-    material.roughness = n;
+    material.albedo = vec3(1.0, 1.0, 1.0);
+    material.roughness = 0.025;//n;
     material.metallic = 0.0;
   }
 
@@ -236,8 +236,8 @@ vec3 render(vec2 uv, vec3 rayOrigin, vec3 cx, vec3 cy, vec3 cz, float zoom, out 
   }
 
   vec3 N = sceneNormal(rayPos, totalDistance);
-  vec3 L = normalize(light_pos - rayPos);
-  float d = distance(rayPos, light_pos);
+  vec3 L = normalize(light0Pos - rayPos);
+  float d = distance(rayPos, light0Pos);
 
   vec3 lightValue = lightColor / (/*epsilon +*/ d * d);
   lightValue *= calcSoftshadow(rayPos, L, totalDistance * halfPixelScale * 2.0, 0.25, d, 0.01);
@@ -248,7 +248,7 @@ vec3 render(vec2 uv, vec3 rayOrigin, vec3 cx, vec3 cy, vec3 cz, float zoom, out 
 }
 
 void main() {
-  light_pos = vec3(0.0, 2.0 + sin(time * tau / 2.0) * 0.5, 0.0);
+  light0Pos = vec3(cos(time * tau / 4.0) * 2.0, 0.0 + sin(time * tau / 2.0) * 1.0, sin(time * tau / 4.0) * 2.0);
 
   // Move to uniforms?
 

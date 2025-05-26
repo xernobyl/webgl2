@@ -107,6 +107,7 @@ export class App {
 
     // draw plane
 
+    /*
     //GL.gl.enable(GL.gl.DEPTH_TEST)
     GL.gl.depthFunc(GL.gl.LESS)
     GL.gl.enable(GL.gl.CULL_FACE)
@@ -117,15 +118,19 @@ export class App {
     GL.gl.uniform2f(Shaders.uniform('plane', 'bias'), MIDIManager.getSliderValue(1), MIDIManager.getSliderValue(2))
     App.#plane.draw()
     GL.gl.disable(GL.gl.CULL_FACE)
+    */
     GL.gl.disable(GL.gl.DEPTH_TEST)
+
 
     // draw cube
 
+    /*
     Shaders.useProgram('color')
     GL.gl.uniformMatrix4fv(Shaders.uniform('color', 'mvp'), false, App.#camera.viewProjection)
     GL.gl.uniformMatrix4fv(Shaders.uniform('color', 'mv'), false, App.#camera.view)
     GL.gl.uniform3f(Shaders.uniform('color', 'color'), 1.0, 0.0, 0.0)
     Cube.drawOutlines()
+    */
 
     // draw particles
 
@@ -159,13 +164,17 @@ export class App {
     GL.gl.activeTexture(GL.gl.TEXTURE1)
     GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.textureHalf)
 
+    const aspectScale = vec2.fromValues(GL.aspectRatio, 1.0)
+    vec2.normalize(aspectScale, aspectScale)
+
     Shaders.useProgram('screen')
     GL.gl.uniform1f(Shaders.uniform('screen', 'time'), GL.time)
     GL.gl.uniform2f(Shaders.uniform('screen', 'inverse_screen_size'), 1.0 / GL.canvas.width, 1.0 / GL.canvas.height)
     GL.gl.uniform2f(Shaders.uniform('screen', 'screen_size'), GL.canvas.width, GL.canvas.height)
+    GL.gl.uniform2f(Shaders.uniform('screen', 'uAspectScale'), aspectScale[0], aspectScale[1])
     GL.gl.uniform1i(Shaders.uniform('screen', 'screen'), 0)
     GL.gl.uniform1i(Shaders.uniform('screen', 'bloom'), 1)
-    GL.gl.uniform2f(Shaders.uniform('screen', 'halfPixel'), 1.0 / Math.ceil(Framebuffer.width / 2), 1.0 / Math.ceil(Framebuffer.height / 2))
+    GL.gl.uniform2f(Shaders.uniform('screen', 'texelSize'), 1.0 / Math.ceil(Framebuffer.width / 2), 1.0 / Math.ceil(Framebuffer.height / 2))
     Quad.draw()
   }
 

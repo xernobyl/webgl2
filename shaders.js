@@ -18,7 +18,8 @@ export class Shaders {
         'time': null,
         'screen': null,
         'bloom': null,
-        'halfPixel': null
+        'texelSize': null,
+        'uAspectScale': null
       }
     },
 
