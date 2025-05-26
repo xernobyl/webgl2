@@ -10,7 +10,7 @@ const shaderTypes = {
 export class Shaders {
   static #shaderPrograms = {
     screen: {
-      'fragment': ['common', 'blur', 'screen'],
+      'fragment': ['common', 'color', 'blur', 'screen'],
       'vertex': ['screen'],
       'uniforms': {
         'screen_size': null,
@@ -94,7 +94,6 @@ export class Shaders {
         'color': null,
         'texelSize': null,
         'threshold': null,
-        'knee': null,
         'uRadius': null
       }
     },

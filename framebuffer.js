@@ -208,7 +208,6 @@ export class Framebuffer {
       nPasses = Framebuffer.#mipLevels - 1
     }
 
-    const knee = 0.1
     const threshold = 1.0
 
     nPasses = Math.max(0, Math.min(nPasses, Framebuffer.#mipLevels - 1))
@@ -231,7 +230,6 @@ export class Framebuffer {
     GL.gl.uniform1i(Shaders.uniform('blur_brightness', 'color'), 0)
     GL.gl.uniform2f(Shaders.uniform('blur_brightness', 'texelSize'), 1.0 / pw, 1.0 / ph)
     GL.gl.uniform1f(Shaders.uniform('blur_brightness', 'threshold'), threshold)
-    GL.gl.uniform1f(Shaders.uniform('blur_brightness', 'knee'), knee)
     GL.gl.uniform1f(Shaders.uniform('blur_brightness', 'uRadius'), radius)
     Quad.draw()
 

@@ -16,20 +16,6 @@ vec3 palette(in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d) {
   return a + b * cos(2.0 * pi * (c * t + d));
 }
 
-vec3 sRGB(vec3 linear) {
-  vec3 a = 12.92 * linear;
-  vec3 b = 1.055 * pow(linear, vec3(1.0 / 2.4)) - 0.055;
-  vec3 c = step(vec3(0.0031308), linear);
-  return mix(a, b, c);
-}
-
-vec3 sRGB(float linear) {
-  float a = 12.92 * linear;
-  float b = 1.055 * pow(linear, 1.0 / 2.4) - 0.055;
-  float c = step(0.0031308, linear);
-  return vec3(mix(a, b, c));
-}
-
 float min3(float a, float b, float c) {
   return min(a, min(b, c));
 }
@@ -42,7 +28,7 @@ float sss(vec3 V, vec3 N, vec3 L, float mDistortion, float mLTPower, float lSize
   vec3 vLTLight = L + N * mDistortion;
   float fLTDot = pow(saturate(dot(V, -vLTLight)), mLTPower) * lSize;
   return (fLTDot + mAmbient) * mThickness;
-  
+
   // fLightAttenuation * cDiffuseAlbedo * cLightDiffuse * fLT;
 }
 

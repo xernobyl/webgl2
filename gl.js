@@ -14,7 +14,7 @@ export class GL {
 
   static #createCanvas() {
     GL.#canvas = document.createElement('canvas')
-  
+
     Object.assign(document.body.style, {
       margin: '0',
       padding: '0',
@@ -23,7 +23,7 @@ export class GL {
       width: '100vw',
       height: '100vh'
     })
-    
+
     Object.assign(GL.#canvas.style, {
       display: 'block',
       width: '100%',
@@ -36,12 +36,12 @@ export class GL {
     if (GL.#gl === null) {
       throw new Error('WebGL 2.0 not supported, apparently 🤷')
     }
-  
+
     const ext = GL.#gl.getExtension('EXT_color_buffer_float')
     if (!ext) {
       throw new Error('Floating-point rendering not supported! We kind of need that')
     }
-    
+
     console.log(GL.#gl.getSupportedExtensions())
   }
 
@@ -52,7 +52,7 @@ export class GL {
     const height = Math.floor(rect.height * dpr)
 
     GL.#aspectRatio = width / height
-  
+
     if (GL.#canvas.width !== width || GL.#canvas.height !== height) {
       GL.#canvas.width = width
       GL.#canvas.height = height
@@ -72,7 +72,7 @@ export class GL {
     if (GL.#frame === 0) {
       GL.#timeOffset = frameTime
     }
-    
+
     const previousTime = GL.#time
     GL.#time = frameTime - GL.#timeOffset
     GL.#frameDuration = (frameTime - previousTime)
@@ -80,7 +80,7 @@ export class GL {
     if (GL.#frame % 120 === 119) {
       GL.#logStats()
     }
-    
+
     GL.#cbLoop()
 
     ++GL.#frame
@@ -88,7 +88,7 @@ export class GL {
   }
 
   static #onLoad() {
-    
+
 
     GL.#createCanvas()
     GL.#createContext()
@@ -101,10 +101,10 @@ export class GL {
 
     GL.#onResize()
     addEventListener('resize', GL.#onResize)
-    
+
     requestAnimationFrame(GL.#renderLoop)
   }
-  
+
   static init(load, loop, resize) {
     GL.#cbLoad = load
     GL.#cbLoop = loop
@@ -128,7 +128,7 @@ export class GL {
   static get time() {
     return GL.#time
   }
-  
+
   static get timeOffset() {
     return GL.#timeOffset
   }

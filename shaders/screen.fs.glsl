@@ -5,8 +5,8 @@ uniform vec2 halfPixel;
 in vec2 p;
 
 void main() {
-  vec3 image = texture(screen, p).rgb;
-  image += blurUpsample(bloom, p, halfPixel);
+  vec3 image = texture(screen, p).rgb +
+               blurUpsample(bloom, p, halfPixel);
 
-  frag_color = vec4(sRGB(image), 1.0);
+  frag_color = vec4(sRGB(tonemap(image)), 1.0);
 }
