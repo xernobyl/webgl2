@@ -1,4 +1,4 @@
-layout(location = 0) out lowp vec4 frag_color;
+layout(location = 0) out lowp vec4 fragColor;
 uniform sampler2D samplerCurrent;
 uniform sampler2D samplerMotion;
 uniform sampler2D samplerPrevious;
@@ -30,5 +30,5 @@ void main() {
 
   float b = 7.0 / 8.0;
 
-  frag_color = vec4(mix(current, previous, b), 0.0);
+  fragColor = vec4(mix(current, previous, b), 0.0);
 }

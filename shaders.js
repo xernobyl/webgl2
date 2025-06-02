@@ -89,7 +89,7 @@ export class Shaders {
     },
 
     blur_brightness: {
-      'fragment': ['blur', 'blur_brightness'],
+      'fragment': ['openSimplex2', 'blur', 'blur_brightness'],
       'vertex': ['quad_basic'],
       'uniforms': {
         'color': null,
@@ -116,6 +116,15 @@ export class Shaders {
         'color': null,
         'texelSize': null,
         'uRadius': null
+      }
+    },
+
+    lens: {
+      'fragment': ['lens'],
+      'vertex': ['lens'],
+      'uniforms': {
+        'bloom': null,
+        'ar': null
       }
     }
   }

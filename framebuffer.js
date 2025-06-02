@@ -3,6 +3,7 @@
 import { GL } from './gl.js'
 import { Shaders } from './shaders.js'
 import { Quad } from './quad.js'
+import { vec2 } from './gl-matrix/index.js'
 
 export class Framebuffer {
   static #width
@@ -76,7 +77,7 @@ export class Framebuffer {
       }
 
       // Create mip framebuffers
-      for (let i = 0; i < mipLevels; i++) {
+      for (let i = 0; i <= mipLevels; i++) {
         Framebuffer.#framebufferMips[i] = GL.gl.createFramebuffer()
       }
     } else {
@@ -103,7 +104,7 @@ export class Framebuffer {
     Framebuffer.#textureMotion = GL.gl.createTexture()
 
     // Create mip textures
-    for (let i = 0; i < mipLevels; i++) {
+    for (let i = 0; i <= mipLevels; i++) {
       Framebuffer.#textureMips[i] = GL.gl.createTexture()
     }
 
@@ -125,8 +126,8 @@ export class Framebuffer {
     Framebuffer.#setTextureParams(GL.gl.CLAMP_TO_EDGE, GL.gl.LINEAR)
 
     // Initialize mip textures
-    for (let i = 0; i < mipLevels; i++) {
-      const scale = 1.0 / (1 << (i + 1))
+    for (let i = 0; i <= mipLevels; i++) {
+      const scale = 1.0 / (1 << (Math.min(i, mipLevels - 1) + 1))
       const w = Math.ceil(width * scale)
       const h = Math.ceil(height * scale)
 
@@ -158,7 +159,7 @@ export class Framebuffer {
     }
 
     // Initialize mip framebuffers
-    for (let i = 0; i < mipLevels; i++) {
+    for (let i = 0; i <= mipLevels; i++) {
       GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferMips[i])
       GL.gl.framebufferTexture2D(GL.gl.DRAW_FRAMEBUFFER, GL.gl.COLOR_ATTACHMENT0, GL.gl.TEXTURE_2D, Framebuffer.#textureMips[i], 0)
       if (!Framebuffer.#checkFramebufferStatus()) {
@@ -208,7 +209,7 @@ export class Framebuffer {
       nPasses = Framebuffer.#mipLevels - 1
     }
 
-    const threshold = 1.0
+    const threshold = 0.0
 
     nPasses = Math.max(0, Math.min(nPasses, Framebuffer.#mipLevels - 1))
 
@@ -246,6 +247,7 @@ export class Framebuffer {
       GL.gl.invalidateFramebuffer(GL.gl.DRAW_FRAMEBUFFER, [GL.gl.COLOR_ATTACHMENT0])
       GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
 
+      GL.gl.activeTexture(GL.gl.TEXTURE0)
       GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureMips[i])
 
       Shaders.useProgram('blur_downsample')
@@ -254,6 +256,20 @@ export class Framebuffer {
       GL.gl.uniform1f(Shaders.uniform('blur_downsample', 'uRadius'), radius)
       Quad.draw()
     }
+
+    // Lens glare pass
+    GL.gl.bindFramebuffer(GL.gl.DRAW_FRAMEBUFFER, Framebuffer.#framebufferMips[Framebuffer.#mipLevels])
+    GL.gl.viewport(0, 0, w, h)
+    GL.gl.invalidateFramebuffer(GL.gl.DRAW_FRAMEBUFFER, [GL.gl.COLOR_ATTACHMENT0])
+    GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
+
+    GL.gl.activeTexture(GL.gl.TEXTURE0)
+    GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureMips[Framebuffer.#mipLevels - 1])
+
+    Shaders.useProgram('lens')
+    GL.gl.uniform1f(Shaders.uniform('lens', 'ar'), 1.0 / GL.aspectRatio)
+    GL.gl.uniform1i(Shaders.uniform('lens', 'bloom'), 0)
+    Quad.draw()
 
     // Upsample passes
     for (let i = nPasses - 1; i >= 0; i--) {
@@ -268,7 +284,8 @@ export class Framebuffer {
       GL.gl.drawBuffers([GL.gl.COLOR_ATTACHMENT0])
       GL.gl.viewport(0, 0, w, h)
 
-      GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureMips[i + 1])
+      GL.gl.activeTexture(GL.gl.TEXTURE0)
+      GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureMips[i === nPasses - 1 ? Framebuffer.#mipLevels : i + 1])
 
       Shaders.useProgram('blur_upsample')
       GL.gl.uniform1i(Shaders.uniform('blur_upsample', 'color'), 0)

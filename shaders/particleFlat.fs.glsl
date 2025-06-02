@@ -1,4 +1,4 @@
-layout(location = 0) out lowp vec4 frag_color;
+layout(location = 0) out lowp vec4 fragColor;
 in highp float point_size;
 flat in int id;
 
@@ -8,5 +8,5 @@ void main() {
     discard;
   }
   vec3 col = vec3(1.0, 0.0, 0.0);
-  frag_color = vec4(col * alpha, alpha);
+  fragColor = vec4(col * alpha, alpha);
 }

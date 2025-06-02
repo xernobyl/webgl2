@@ -24,7 +24,7 @@ vec3 blurDownsample(sampler2D tex, vec2 uv, vec2 texelSize) {
 vec3 brightnessPass(vec3 color, float threshold) {
     float lum = dot(color, vec3(0.2126, 0.7152, 0.0722));
     // return color * smoothstep(threshold - threshold * knee, threshold + threshold * knee, lum);
-    return lum > threshold ? color : vec3(0.0);
+    return lum >= threshold ? color : vec3(0.0);
 }
 
 vec3 brightnessPassT(sampler2D tex, vec2 uv, float threshold) {

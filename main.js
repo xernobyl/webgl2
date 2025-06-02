@@ -11,6 +11,7 @@ import { Shaders } from './shaders.js'
 import { ResourceManager } from './resourcemanager.js'
 import { GL } from './gl.js'
 import { haltonSequence2D } from './utils.js'
+import { TextureBindingManager } from './texturebindingmanager.js'
 
 const jitterSize = 8
 
@@ -41,6 +42,8 @@ export class App {
     console.log('Compiling shaders...')
     Shaders.init()
     console.log('LOADING THINGS')
+
+    TextureBindingManager.init()
 
     Quad.init()
     Cube.init()
@@ -183,7 +186,7 @@ export class App {
     const fbWidth = Math.ceil(GL.canvas.width / scale)
     const fbHeight = Math.ceil(GL.canvas.height / scale)
 
-    Framebuffer.init(fbWidth, fbHeight)
+    Framebuffer.init(fbWidth, fbHeight, 3)
   }
 
   static #afterLoad() {

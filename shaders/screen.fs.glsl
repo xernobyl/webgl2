@@ -1,42 +1,22 @@
-layout(location = 0) out lowp vec4 frag_color;
+layout(location = 0) out lowp vec4 fragColor;
 uniform sampler2D screen;
 uniform sampler2D bloom;
 uniform vec2 texelSize;
 in vec2 p, np;
 
-vec3 lensGlare(sampler2D bloomTex, vec2 uv, vec2 texelSize) {
-  vec3 glare = vec3(0.0);
-
-  // Ghosts
-  const float ghostCount = 4.0;
-  const float ghostSpacing = 0.25;
-
-  for (float i = ghostSpacing; i <= ghostSpacing * ghostCount; i += ghostSpacing) {
-    float offset = i;
-    vec2 ghostUV = mix(uv, vec2(0.5), offset); // pull towards screen center
-    glare += texture(bloomTex, ghostUV).rgb * (1.0 - offset);
-  }
-
-  // Chromatic Aberration Ghost
-  vec2 caOffset = texelSize * 10.0;
-  glare += 0.5 * vec3(
-    texture(bloomTex, uv + caOffset).r,
-    texture(bloomTex, uv).g,
-    texture(bloomTex, uv - caOffset)).b;
-
-  // Streaks
-  for (float i = -3.0; i <= 3.0; i += 1.0) {
-    vec2 offset = vec2(i, 0.0) * texelSize * 6.0;
-    glare += texture(bloomTex, uv + offset).rgb * 0.05;
-  }
-
-  return glare;
-}
-
 void main() {
-  vec3 image = texture(screen, p).rgb +
-               0.25 * blurUpsample(bloom, p, texelSize) +
-               0.125 * lensGlare(bloom, p, texelSize);
+  vec3 image = 0.666666666666666666 * texture(screen, p).rgb;// +
+               //blurUpsample(bloom, p, texelSize) / 32.0;
+
+  vec2 c = p * 2.0 - 1.0;
+  vec2 cs = vec2(0.5);
+  vec2 cb = vec2(0.5);
+
+  float caOffset = 0.025;
+  image += 0.333333333333333333 * vec3(
+      texture(bloom, (c * (1.0 + 0.0 * caOffset)) * cs + cs).r,
+      texture(bloom, (c * (1.0 + 1.0 * caOffset)) * cb + cs).g,
+      texture(bloom, (c * (1.0 + 3.0 * caOffset)) * cb + cs).b);
 
   // ChatGPT says this vignette is legit
   float r = length(np) * 0.5;
@@ -44,5 +24,5 @@ void main() {
 
   image *= vignette;
 
-  frag_color = vec4(sRGB(tonemap(image)), 1.0);
+  fragColor = vec4(sRGB(tonemap(image)), 1.0);
 }
