@@ -24,8 +24,6 @@ void main() {
   // ChatGPT says this vignette is legit
   float r = length(np) * 0.5;
   float vignette = pow(1.0 - r * r, 4.0);
-
-
   image *= vignette;
 
   fragColor = vec4(sRGB(tonemap(image)), 1.0);

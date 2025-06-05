@@ -37,35 +37,51 @@ vec3 waveLengthToLinearRGB(float w) {
 
 vec3 spectralRing(vec2 p) {
   float rad = length(p);
-  float wavelength = 380.0 + 370.0 * rad; // In nanometers
+  float wavelength = 380.0 + 370.0 * pow(rad * rad, 1.5); // In nanometers
   return waveLengthToLinearRGB(wavelength);
 }
 
 void main() {
-    // Adjust UV coordinates to account for aspect ratio
-    vec2 scaledUV = (p - 0.5) * 1.0 * 2.0;
-    float brightness = 1.0;
-    float totalBrightness = 0.0;
+    // Ghosts
+    float uGhostSpacing = 0.2;
 
-    for (float i = 1.5; i <= 5.0; i *= 1.5) {
-        totalBrightness += brightness;
-        fragColor += texture(bloom, 0.5 - (scaledUV / i) * 0.5).rgb * brightness;
-        brightness = 0.25 * brightness;
+    vec2 uv = vec2(1.0) - p; // flip the texture coordinates
+    vec3 ret = vec3(0.0);
+    vec2 ghostVec = (vec2(0.5) - uv) * uGhostSpacing;
+
+    for (int i = 0; i < 4; ++i) {
+	    vec2 suv = fract(uv + ghostVec * vec2(i));
+	    float d = distance(suv, vec2(0.5));
+	    float weight = 1.0 - smoothstep(0.0, 0.75, d); // reduce contributions from samples at the screen edge
+	    vec3 s = texture(bloom, suv).rgb;
+	    // s = ApplyThreshold(s, uGhostThreshold);
+	    ret += s * weight;
     }
 
-    fragColor /= totalBrightness;
+    fragColor = ret * (spectralRing(np) * 0.975 + 0.025);
 
-    fragColor *= spectralRing(p * 2.0 - 1.0);
+    float uAspectRatio = 16.0 / 9.0;
+    float uHaloRadius = 0.5;
+    float uHaloThickness = 0.1;
 
-    fragColor += 0.5 * texture(bloom, p).rgb;
+    // Halo
+    float haloRadius = 0.4;
+    float haloFalloff = 3.0;
 
+    float dHalo = length(np);
+    float haloIntensity = exp(-pow(dHalo / haloRadius, haloFalloff));
+
+    vec3 haloColor = spectralRing(np);
+    fragColor += texture(bloom, vec2(0.5)).rgb * spectralRing(np) * haloIntensity;
+
+    // Chromatic aberration bloom
     vec2 c = p * 2.0 - 1.0;
     vec2 cs = vec2(0.5);
     vec2 cb = vec2(0.5);
 
     float caOffset = 0.025;
 
-    fragColor += 0.5 * vec3(
+    fragColor += vec3(
       texture(bloom, (c * (1.0 + 0.0 * caOffset)) * cs + cs).r,
       texture(bloom, (c * (1.0 + 1.0 * caOffset)) * cb + cs).g,
       texture(bloom, (c * (1.0 + 3.0 * caOffset)) * cb + cs).b);
