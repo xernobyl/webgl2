@@ -5,11 +5,24 @@ uniform vec2 texelSize;
 uniform vec3 uCameraDir;
 in vec2 p, np;
 
-float starburst(float phi, vec3 dir) {
-  float t = dot(vec3(0.0, 0.0, -1.0), dir);
+float hash1(vec2 p) {
+  return fract(sin(p.x*0.129898 + p.y*0.78233) * 43758.5453);
+}
 
-  // TODO: use some tileable noise... there's a visible seam :(
-  return openSimplex2_Conventional(vec3(0.0, phi * 32.0, 4.0 * t)).a * 0.25 + 0.75;
+float valueNoise(vec2 p, vec2 s) {
+  vec2 cell = floor(p);
+  vec2 sub = p - cell;
+  vec2 cube = sub * sub * (3. - 2. * sub);
+  const vec2 off = vec2(0.0, 1.0);
+
+  return mix(mix(hash1(mod(cell + off.xx, s)), hash1(mod(cell + off.yx, s)), cube.x),
+             mix(hash1(mod(cell + off.xy, s)), hash1(mod(cell + off.yy, s)), cube.x), cube.y);
+}
+
+float starburst(float phi, vec3 dir) {
+  float t = dot(vec3(0.0, 0.0, -1.0), dir) * 0.5 + 0.5;
+
+  return valueNoise(vec2(phi / tau * 10000.0, t * 10000.0), vec2(10000.0, 10000.0)) * 0.5 + 0.5;
 }
 
 void main() {
