@@ -82,6 +82,16 @@ export class Camera {
     return this.#inverseView
   }
 
+  get direction() {
+    const m = this.#inverseView
+    // Transform the local forward vector (0, 0, -1) by the rotation part of the inverse view matrix
+    return [
+      m[8] * -1 + m[0] * 0 + m[4] * 0,
+      m[9] * -1 + m[1] * 0 + m[5] * 0,
+      m[10] * -1 + m[2] * 0 + m[6] * 0
+    ]
+  }
+
   setJitter(x, y) {
     this.#jitterX = x
     this.#jitterY = y

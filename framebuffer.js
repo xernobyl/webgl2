@@ -267,7 +267,11 @@ export class Framebuffer {
     GL.gl.bindTexture(GL.gl.TEXTURE_2D, Framebuffer.#textureMips[Framebuffer.#mipLevels - 1])
 
     Shaders.useProgram('lens')
-    GL.gl.uniform1f(Shaders.uniform('lens', 'ar'), 1.0 / GL.aspectRatio)
+
+    const aspectScale = vec2.fromValues(GL.aspectRatio, 1.0)
+    vec2.normalize(aspectScale, aspectScale)
+
+    GL.gl.uniform2f(Shaders.uniform('lens', 'uAspectScale'), aspectScale[0], aspectScale[1])
     GL.gl.uniform1i(Shaders.uniform('lens', 'bloom'), 0)
     Quad.draw()
 

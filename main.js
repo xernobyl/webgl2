@@ -178,6 +178,8 @@ export class App {
     GL.gl.uniform1i(Shaders.uniform('screen', 'screen'), 0)
     GL.gl.uniform1i(Shaders.uniform('screen', 'bloom'), 1)
     GL.gl.uniform2f(Shaders.uniform('screen', 'texelSize'), 1.0 / Math.ceil(Framebuffer.width / 2), 1.0 / Math.ceil(Framebuffer.height / 2))
+    GL.gl.uniform3fv(Shaders.uniform('screen', 'uCameraDir'), App.#camera.direction)
+
     Quad.draw()
   }
 

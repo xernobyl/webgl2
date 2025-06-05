@@ -10,7 +10,7 @@ const shaderTypes = {
 export class Shaders {
   static #shaderPrograms = {
     screen: {
-      'fragment': ['common', 'color', 'blur', 'screen'],
+      'fragment': ['common', 'openSimplex2', 'color', 'blur', 'screen'],
       'vertex': ['screen'],
       'uniforms': {
         'screen_size': null,
@@ -19,7 +19,8 @@ export class Shaders {
         'screen': null,
         'bloom': null,
         'texelSize': null,
-        'uAspectScale': null
+        'uAspectScale': null,
+        'uCameraDir': null
       }
     },
 
@@ -121,10 +122,10 @@ export class Shaders {
 
     lens: {
       'fragment': ['lens'],
-      'vertex': ['lens'],
+      'vertex': ['screen'],
       'uniforms': {
         'bloom': null,
-        'ar': null
+        'uAspectScale': null
       }
     }
   }
