@@ -203,7 +203,7 @@ vec3 render(vec2 uv, vec3 rayOrigin, vec3 cx, vec3 cy, vec3 cz, float zoom, out 
   }
 
   //vec3 lightColor = colorize(lightInfo.x) * lightInfo.y;
-  vec3 lightColor = vec3(25.0);//colorize(time / 10.0) * 25.0; // * (sin(time * tau * 1.0) * 2.5 + 7.5);
+  vec3 lightColor = colorize(time / 10.0) * 25.0; // * (sin(time * tau * 1.0) * 2.5 + 7.5);
 
   if (objectId == 0u) {
     return vec3(1.0, 0.0, 0.0);

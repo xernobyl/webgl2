@@ -22,7 +22,7 @@ float valueNoise(vec2 p, vec2 s) {
 float starburst(float phi, vec3 dir) {
   float t = dot(vec3(0.0, 0.0, -1.0), dir) * 0.5 + 0.5;
 
-  return valueNoise(vec2(phi / tau * 10000.0, t * 10000.0), vec2(10000.0, 10000.0)) * 0.5 + 0.5;
+  return valueNoise(vec2(phi / tau * 1000.0, t * 76.54321), vec2(10000.0, 10000.0)) * 0.25 + 0.75;
 }
 
 void main() {
