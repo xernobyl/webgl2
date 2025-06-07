@@ -1,3 +1,6 @@
+// Mostly based on this article:
+// https://john-chapman.github.io/2017/11/05/pseudo-lens-flare.html
+
 layout(location = 0) out vec3 fragColor;
 uniform sampler2D bloom;
 in vec2 p, np;
