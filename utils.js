@@ -20,3 +20,14 @@ export function haltonSequence2D(count, base1 = 2, base2 = 3) {
 
   return points
 }
+
+// packed into 2x Uint8 or 1x Uint16
+function encodeOctahedral(normal) {
+  normal /= Math.abs(normal[0]) + Math.abs(normal[1]) + Math.abs(normal[2])
+  if (normal[2] < 0.0) {
+    normal[0] = (1.0 - Math.abs(normal[1])) * Math.sign(normal[0]) * 0.5 + 0.5
+    normal[1] = (1.0 - Math.abs(normal[0])) * Math.sign(normal[1]) * 0.5 + 0.5
+  }
+
+  return [normal[0], normal[1]]
+}

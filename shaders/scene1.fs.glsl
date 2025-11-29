@@ -7,6 +7,9 @@ uniform vec2 jitter;
 
 uniform vec2 lightInfo;
 
+const int NUM_LIGHTS = 2;
+vec3 lightPos[NUM_LIGHTS];
+
 layout(location = 0) out mediump vec3 outColor;
 layout(location = 1) out highp vec2 outMotion;
 
@@ -20,8 +23,6 @@ const float holeRadius = 1.0 / 32.0;
 
 float halfPixelScale;
 lowp uint objectId;
-
-vec3 light0Pos;
 
 float rdSph(vec3 p, vec4 rid) {
   vec4 h = hash4(rid);
@@ -41,7 +42,7 @@ float warehouse(vec3 p, bool include_lights, out uint object) {
   float pillars = sdBox(pillar_pos, vec3(0.5, 5.0, 0.5));
 
   float bars = min(sdBox(opRep(p + vec3(0.0, -7.0, 0.0), vec3(15.0, 1000.0, 0.0)), vec3(0.5, 0.5, 40.0)),
-    sdBox(opRep(p + vec3(0.0, -7.0, 5.0), vec3(1000.0, 1000.0, 20.0)), vec3(20.0, 0.5, 0.5)));
+                   sdBox(opRep(p + vec3(0.0, -7.0, 5.0), vec3(1000.0, 1000.0, 20.0)), vec3(20.0, 0.5, 0.5)));
 
   float bars_and_pillars = opSmoothUnion(bars, pillars, 0.25);
 
@@ -71,15 +72,13 @@ float warehouse(vec3 p, bool include_lights, out uint object) {
 
 
   float rebar = min4(sdVerticalCapsule(pillar_pos + vec3(-0.5 / 1.5, 10.0, 0.5 / 1.5), 100.0, 0.02),
-               sdVerticalCapsule(pillar_pos + vec3(0.5 / 1.5, 10.0, 0.5 / 1.5), 100.0, 0.02),
-               sdVerticalCapsule(pillar_pos + vec3(-0.5 / 1.5, 10.0, -0.5 / 1.5), 100.0, 0.02),
-               sdVerticalCapsule(pillar_pos + vec3(0.5 / 1.5, 10.0, -0.5 / 1.5), 100.0, 0.02));
+                     sdVerticalCapsule(pillar_pos + vec3(0.5 / 1.5, 10.0, 0.5 / 1.5), 100.0, 0.02),
+                     sdVerticalCapsule(pillar_pos + vec3(-0.5 / 1.5, 10.0, -0.5 / 1.5), 100.0, 0.02),
+                     sdVerticalCapsule(pillar_pos + vec3(0.5 / 1.5, 10.0, -0.5 / 1.5), 100.0, 0.02));
 
   bars_and_pillars = opSmoothSubtraction(hole0, bars_and_pillars, 1.0 / 32.0);
 
   float room = opSmoothUnion(main_walls, bars_and_pillars, 1.0 / 16.0);
-
-
 
   float pipes = min(sdVerticalCapsule(p.xzy - vec3(18.0, -50.0, 6.0), 200.0, 0.10),
                     sdVerticalCapsule(p.xzy - vec3(18.0, -50.0, 5.6), 200.0, 0.10));
@@ -99,14 +98,11 @@ float warehouse(vec3 p, bool include_lights, out uint object) {
   }
 
   if (include_lights) {
-    float light_objs[1];
-
-    light_objs[0] = sdSphere(p - light0Pos, 0.125);
-
-    for (uint i = 0u; i < 1u; ++i) {
-      if (light_objs[i] < min_dist) {
-        min_dist = light_objs[i];
-        object = i + 4u;
+    for (int i = 0; i < NUM_LIGHTS; ++i) {
+      float d = sdSphere(p - lightPos[i], 0.125);
+      if (d < min_dist) {
+        min_dist = d;
+        object = uint(i + 4);
       }
     }
   }
@@ -115,8 +111,6 @@ float warehouse(vec3 p, bool include_lights, out uint object) {
 }
 
 float scene(vec3 p) {
-  //return sdBox(p, vec3(1.0));
-
   return warehouse(p, true, objectId);
 }
 
@@ -148,28 +142,23 @@ vec3 sceneNormal(vec3 p, float d) {
 }
 
 vec3 colorize(float t) {
-  return palette(t, vec3(0.5,0.5,0.5),vec3(0.5,0.5,0.5),vec3(1.0,0.7,0.4),vec3(0.0,0.15,0.20));
+  return palette(t, vec3(0.5), vec3(0.5), vec3(1.0,0.7,0.4), vec3(0.0,0.15,0.20));
 }
 
 float calcSoftshadow(in vec3 ro, in vec3 rd, float error, in float mint, in float tmax, in float w) {
   float res = 1.0;
   float t = mint;
-  float ph = 1e10; // big, such that y = 0 on the first iteration
+  float ph = 1e10;
 
   for (lowp uint i = 0u; i < 32u; i++) {
     float h = sceneNoLights(ro + rd * t);
-
-    float y = h*h/(2.0*ph);
-    float d = sqrt(h*h-y*y);
-    res = min( res, d/(w*max(0.0,t-y)) );
+    float y = h * h / (2.0 * ph);
+    float d = sqrt(h * h - y * y);
+    res = min(res, d / (w * max(0.0, t - y)));
     ph = h;
-
     t += h;
 
-    if (res <= error || t > tmax) {
-      break;
-    }
-
+    if (res <= error || t > tmax) break;
   }
 
   res = saturate(res);
@@ -181,86 +170,74 @@ vec3 render(vec2 uv, vec3 rayOrigin, vec3 cx, vec3 cy, vec3 cz, float zoom, out 
   vec3 rayPos = rayOrigin;
 
   objectId = 0u;
-
-  // doesn't seem to create any sort of effect in the final image
   float noiz = halfPixelScale * (2.0 * hash1(vec3(uv, time)) - 1.0);
   float totalDistance = near + noiz;
 
   for (mediump uint it = 0u; it < maxIterations; ++it) {
     float stepSize = scene(rayPos);
-
     totalDistance += stepSize;
     rayPos = rayOrigin + totalDistance * rayDir;
 
-    if (stepSize <= halfPixelScale * totalDistance) {
-      break;
-    }
-
+    if (stepSize <= halfPixelScale * totalDistance) break;
     if (totalDistance >= far) {
       objectId = 0u;
       break;
     }
   }
 
-  //vec3 lightColor = colorize(lightInfo.x) * lightInfo.y;
-  vec3 lightColor = colorize(time / 10.0) * 25.0; // * (sin(time * tau * 1.0) * 2.5 + 7.5);
+  vec3 lightColor[2] = vec3[2](
+    colorize(time / 10.0) * 25.0,
+    vec3(1.0, 0.0, 0.0) * 125.0
+  );
 
-  if (objectId == 0u) {
-    return vec3(1.0, 0.0, 0.0);
-  }
-
-  if (objectId == 4u) {
-    return lightColor / (0.125 * 0.125);
-  }
+  if (objectId == 0u) return vec3(1.0, 0.0, 0.0);
+  if (objectId == 4u) return lightColor[0] / (0.125 * 0.125);
+  if (objectId == 5u) return lightColor[1] / (0.125 * 0.125);
 
   BaseMaterial material;
-
   if (objectId == 1u) {
     float n = openSimplex2_Conventional(rayPos * 0.5).w * 0.5 + 0.5;
-
-    material.albedo = vec3(1.0, 1.0, 1.0);
+    material.albedo = vec3(1.0);
     material.roughness = n;
     material.metallic = 0.0;
-  }
-
-  if (objectId == 2u) {
+  } else if (objectId == 2u) {
     material.albedo = vec3(185.0 / 255.0, 71.0 / 255.0, 0.0);
     material.roughness = 0.25;
     material.metallic = 0.25;
-  }
-
-  if (objectId == 3u) {
+  } else if (objectId == 3u) {
     material.albedo = vec3(0.0, 0.0, 1.0);
     material.roughness = 0.75;
     material.metallic = 0.0;
   }
 
   vec3 N = sceneNormal(rayPos, totalDistance);
-  vec3 L = normalize(light0Pos - rayPos);
-  float d = distance(rayPos, light0Pos);
+  vec3 color = vec3(0.0);
 
-  vec3 lightValue = lightColor / (/*epsilon +*/ d * d);
-  lightValue *= calcSoftshadow(rayPos, L, totalDistance * halfPixelScale * 2.0, 0.25, d, 0.01);
+  for (int i = 0; i < NUM_LIGHTS; ++i) {
+    vec3 L = normalize(lightPos[i] - rayPos);
+    float d = distance(rayPos, lightPos[i]);
+    vec3 lightValue = lightColor[i] / (d * d);
+    lightValue *= calcSoftshadow(rayPos, L, totalDistance * halfPixelScale * 2.0, 0.25, d, 0.01);
+    color += lightingModel(-rayDir, N, L, material.albedo, material.metallic, material.roughness) * lightValue;
+  }
 
-  vec3 color = lightingModel(-rayDir, N, L, material.albedo, material.metallic, material.roughness) * lightValue;
-
+  pos = rayPos;
   return color;
 }
 
 void main() {
-  light0Pos = vec3(cos(time * tau / 4.0) * 2.0, 0.0 + sin(time * tau / 2.0) * 1.0, sin(time * tau / 4.0) * 2.0);
+  lightPos[0] = vec3(cos(time * tau / 4.0) * 2.0, 0.0 + sin(time * tau / 2.0) * 1.0, sin(time * tau / 4.0) * 2.0);
+  lightPos[1] = vec3(cos(time * tau / 2.0) * 4.0, -1.0, sin(time * tau / 2.0) * 4.0);
 
   // Move to uniforms?
 
   float thf = tan(fov * 0.5);
   float zoom = 1.0 / thf;
-  halfPixelScale = thf * resolution.z;  // half a pixel at distance
+  halfPixelScale = thf * resolution.z;
 
-  // Could come from the vertex shader
   vec2 uv = (gl_FragCoord.xy + jitter) * 2.0 - resolution.xy;
   uv *= resolution.z;
 
-  // Extract the camera's right, up, and forward vectors, and position from the inverse view matrix
   vec3 cx = inverseViewMatrix[0].xyz;
   vec3 cy = inverseViewMatrix[1].xyz;
   vec3 cz = inverseViewMatrix[2].xyz;
@@ -269,14 +246,11 @@ void main() {
   vec3 pos;
   outColor = render(uv, rayOrigin, cx, cy, cz, zoom, pos);
 
-  // Motion vector for TAA
   vec4 currentClipPos = currentViewProjMatrix * vec4(pos, 1.0);
   vec3 currentNDC = currentClipPos.xyz / currentClipPos.w;
   vec4 previousClipPos = previousViewProjMatrix * vec4(pos, 1.0);
   vec2 previousNDC = previousClipPos.xy / previousClipPos.w;
 
   outMotion = (previousNDC - currentNDC.xy) * 0.5 + 0.5;
-
-  // Depth output
   gl_FragDepth = currentNDC.z;
 }
